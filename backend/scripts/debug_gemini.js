@@ -1,22 +1,15 @@
 
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Script sem dependencias (sem dotenv)
+const apiKey = process.env.GEMINI_API_KEY;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+if (!apiKey) {
+    console.error('❌ GEMINI_API_KEY não definida via variável de ambiente');
+    process.exit(1);
+}
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+console.log('🔑 Consultando API (Sem dependências)...');
 
 async function listModels() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        console.error('❌ GEMINI_API_KEY não encontrada no .env');
-        process.exit(1);
-    }
-
-    console.log('🔑 Consultando API para listar modelos disponíveis...');
-
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
 
@@ -30,14 +23,15 @@ async function listModels() {
         const data = await response.json();
 
         if (data.models) {
-            console.log('✅ Modelos Disponíveis:');
+            console.log('✅ SUCESSO! Chave válida.');
+            console.log('Modelos acessíveis:');
             data.models.forEach(m => {
-                if (m.supportedGenerationMethods.includes('generateContent')) {
-                    console.log(`- ${m.name.replace('models/', '')} (${m.displayName})`);
+                if (m.name.includes('flash')) { // Filtrar apenas os flash para não poluir
+                    console.log(`- ${m.name.replace('models/', '')}`);
                 }
             });
         } else {
-            console.log('⚠️ Nenhum modelo retornado:', data);
+            console.log('⚠️ Resposta estranha:', data);
         }
 
     } catch (error) {
