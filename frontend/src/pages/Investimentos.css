@@ -1,0 +1,291 @@
+/* Estilos Globais da Página */
+.investimentos-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 2rem;
+}
+
+/* Header Premium */
+.investimentos-header {
+    margin-bottom: 2.5rem;
+}
+
+.investimentos-header h2 {
+    font-size: 2.25rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+}
+
+.investimentos-subtitle {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Cards de Estatísticas com Glassmorphism */
+.invest-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.invest-stat-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 1.75rem;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    /* Sombra suave premium */
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.invest-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.invest-stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+}
+
+.invest-stat-icon.total {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+}
+
+.invest-stat-icon.rendimento {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.invest-stat-icon.count {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.invest-stat-info h3 {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin: 0 0 0.25rem 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.invest-stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+}
+
+.invest-stat-value.profit {
+    color: var(--success);
+}
+
+.invest-stat-value.loss {
+    color: var(--danger);
+}
+
+/* Card Novo Investimento (Destaque) */
+.novo-investimento-card {
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+    padding: 2rem;
+    border-radius: 1.25rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.novo-investimento-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: var(--gradient-primary);
+}
+
+.novo-investimento-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    cursor: pointer;
+}
+
+.novo-investimento-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    color: var(--text);
+}
+
+/* Grid de Investimentos */
+.investimentos-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+.investimento-card {
+    background: white;
+    border-radius: 1.25rem;
+    border: none;
+    /* Removida borda dura */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.investimento-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.investimento-header {
+    padding: 1.5rem;
+    background: linear-gradient(to right, #f8fafc, #f1f5f9);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Badge Melhorada - Sem fundo branco duro */
+.investimento-type-badge {
+    font-size: 0.7rem;
+    padding: 0.4rem 1rem;
+    border-radius: 2rem;
+    background: rgba(99, 102, 241, 0.1);
+    /* Fundo sutil */
+    color: var(--primary);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.investimento-body {
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.invest-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.invest-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.invest-label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.invest-val {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 1.05rem;
+}
+
+.invest-rendimento {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rendimento-val {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.rendimento-val.positive {
+    color: var(--success);
+}
+
+.rendimento-val.negative {
+    color: var(--danger);
+}
+
+.investimento-actions {
+    padding: 1.25rem;
+    background: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Animações suaves */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.investimento-card {
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+    .investimentos-header h2 {
+        font-size: 1.75rem;
+    }
+
+    .invest-stats-grid {
+        grid-template-columns: 1fr;
+        margin-bottom: 2rem;
+    }
+
+    .investimentos-list {
+        grid-template-columns: 1fr;
+    }
+
+    .novo-investimento-card {
+        padding: 1.5rem;
+    }
+}

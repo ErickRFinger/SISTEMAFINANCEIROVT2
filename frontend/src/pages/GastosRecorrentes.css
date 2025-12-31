@@ -1,0 +1,97 @@
+.gasto-card {
+  position: relative;
+}
+
+.gasto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.gasto-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.25rem;
+  flex: 1;
+}
+
+.gasto-valor {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--danger);
+  margin: 0.5rem 0 0 0;
+}
+
+.gasto-status {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.gasto-status.ativo {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.gasto-status.inativo {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.gasto-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+}
+
+.gasto-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.gasto-info-label {
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+.gasto-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gasto-actions button {
+  flex: 1;
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .gasto-header {
+    flex-direction: column;
+  }
+
+  .gasto-status {
+    align-self: flex-start;
+  }
+
+  .gasto-actions {
+    flex-direction: column;
+  }
+
+  .gasto-actions button {
+    width: 100%;
+  }
+}
+

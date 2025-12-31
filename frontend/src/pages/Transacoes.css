@@ -1,0 +1,276 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-header h2 {
+  font-size: 2.5rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  color: var(--text-light);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.transacoes-table {
+  margin-top: 1rem;
+}
+
+.transacao-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.3s;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.transacao-row:hover {
+  background: var(--bg-hover);
+  transform: translateX(4px);
+}
+
+.transacao-row:last-child {
+  border-bottom: none;
+}
+
+.transacao-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.transacao-categoria-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 120px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.transacao-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.transacao-valor {
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  margin-right: 1rem;
+}
+
+.transacao-valor.receita {
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.transacao-valor.despesa {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.transacao-banco-cartao {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border-radius: 1.25rem;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content h3 {
+  margin-bottom: 1.5rem;
+  color: var(--text);
+  font-size: 1.75rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.text-center {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .page-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+
+  .filtros {
+    padding: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  .transacao-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .transacao-info {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .transacao-categoria-badge {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .transacao-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .transacao-valor {
+    width: 100%;
+    text-align: center;
+    margin-right: 0;
+    font-size: 1.25rem;
+    padding: 0.75rem;
+  }
+
+  .modal-overlay {
+    padding: 1rem;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    max-height: 90vh;
+    border-radius: 1rem 1rem 0 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .modal-content h3 {
+    font-size: 1.5rem;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .transacao-valor {
+    font-size: 1.1rem;
+  }
+}

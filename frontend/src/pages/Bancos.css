@@ -1,0 +1,185 @@
+.bancos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.banco-card {
+  border-left: 4px solid;
+}
+
+.banco-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.banco-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.banco-color {
+  width: 50px;
+  height: 50px;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.banco-info h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+
+.banco-tipo {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.banco-saldo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.banco-saldo-label {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-bottom: 0.25rem;
+}
+
+.banco-saldo-valor {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.banco-observacoes {
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+}
+
+.banco-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.cartoes-list {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.cartoes-title {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.cartao-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.cartao-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.cartao-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.cartao-nome {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  color: var(--text);
+}
+
+.cartao-tipo {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.cartao-status {
+  margin-right: 1rem;
+}
+
+.cartao-ativo {
+  color: var(--success);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.cartao-inativo {
+  color: var(--text-light);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.cartao-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .banco-header {
+    flex-direction: column;
+  }
+
+  .banco-saldo {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .banco-actions {
+    flex-direction: column;
+  }
+
+  .banco-actions button {
+    width: 100%;
+  }
+
+  .cartao-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cartao-status {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .cartao-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+

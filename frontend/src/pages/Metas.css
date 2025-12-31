@@ -1,0 +1,164 @@
+.meta-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.meta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.meta-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+  flex: 1;
+}
+
+.meta-descricao {
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.meta-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.meta-status.ativa {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.meta-status.concluida {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--info);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.meta-status.cancelada {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.meta-progress {
+  margin-bottom: 1.5rem;
+}
+
+.meta-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.meta-progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.meta-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.meta-progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.meta-progress-percent {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+}
+
+.meta-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meta-info-label {
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+.meta-categoria {
+  font-weight: 600;
+}
+
+.meta-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.meta-actions button {
+  flex: 1;
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .meta-header {
+    flex-direction: column;
+  }
+
+  .meta-status {
+    align-self: flex-start;
+  }
+
+  .meta-actions {
+    flex-direction: column;
+  }
+
+  .meta-actions button {
+    width: 100%;
+  }
+}
+

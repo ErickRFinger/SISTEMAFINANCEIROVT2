@@ -1,0 +1,75 @@
+==========================================
+VARIÁVEIS DE AMBIENTE PARA O VERCEL
+==========================================
+
+Configure estas variáveis no Vercel:
+Settings → Environment Variables → Add New
+
+==========================================
+VARIÁVEL 1: SUPABASE_URL
+==========================================
+Key: SUPABASE_URL
+Value: https://yizdwjphaynqrisftruo.supabase.co
+Environment: ☑ Production ☑ Preview ☑ Development
+
+==========================================
+VARIÁVEL 2: SUPABASE_ANON_KEY
+==========================================
+Key: SUPABASE_ANON_KEY
+Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpemR3anBoYXlucXJpc2Z0cnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODk1NjEsImV4cCI6MjA3ODg4NTU2MX0.L7KBdI8hF9CQCj8_BbcC7Mdw4NjItx6ZBf3-3aZ07IY
+Environment: ☑ Production ☑ Preview ☑ Development
+
+==========================================
+VARIÁVEL 3: JWT_SECRET
+==========================================
+Key: JWT_SECRET
+Value: [GERE UMA STRING ALEATÓRIA - veja instruções abaixo]
+Environment: ☑ Production ☑ Preview ☑ Development
+
+PARA GERAR O JWT_SECRET:
+Execute no terminal:
+  openssl rand -base64 32
+
+Ou use um gerador online:
+  https://randomkeygen.com/
+  (use "CodeIgniter Encryption Keys")
+
+Exemplo de valor gerado:
+  aB3xK9mP2qR7vT5wY8zN1cD4fG6hJ0kL
+
+==========================================
+VARIÁVEL 4: NODE_ENV (OPCIONAL)
+==========================================
+Key: NODE_ENV
+Value: production
+Environment: ☑ Production
+
+==========================================
+INSTRUÇÕES RÁPIDAS
+==========================================
+
+1. Acesse: https://vercel.com
+2. Seu projeto → Settings → Environment Variables
+3. Clique em "Add New"
+4. Adicione cada variável acima
+5. IMPORTANTE: Marque todas para Production, Preview e Development
+6. Salve cada variável
+7. Após adicionar todas, faça um REDEPLOY:
+   - Deployments → 3 pontos (...) → Redeploy
+
+==========================================
+VERIFICAÇÃO
+==========================================
+
+Após configurar, teste:
+https://seu-projeto.vercel.app/api/health
+
+Deve retornar:
+{"status":"ok","message":"Sistema Financeiro API está funcionando"}
+
+Se retornar erro sobre variáveis faltando, verifique:
+- Se marcou para Production
+- Se fez redeploy após adicionar
+
+==========================================
+

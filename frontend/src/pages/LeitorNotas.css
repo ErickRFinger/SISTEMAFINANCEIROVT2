@@ -1,0 +1,364 @@
+.upload-area {
+  margin: 1.5rem 0;
+}
+
+.file-input {
+  display: none;
+}
+
+.upload-label {
+  display: block;
+  cursor: pointer;
+  border: 2px dashed var(--border);
+  border-radius: 1rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all 0.3s;
+  background: var(--bg-secondary);
+}
+
+.upload-label:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upload-icon {
+  font-size: 4rem;
+  opacity: 0.7;
+}
+
+.upload-placeholder p {
+  color: var(--text);
+  font-weight: 500;
+  margin: 0;
+}
+
+.upload-hint {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.upload-buttons-container {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+  margin: 0.5rem 0;
+}
+
+.btn-upload-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 2px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.btn-upload-option:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+}
+
+.btn-upload-option span {
+  font-size: 2rem;
+}
+
+
+.preview-container {
+  position: relative;
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.preview-image {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+}
+
+.preview-text {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.progress-container {
+  margin: 1.5rem 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 4px;
+  transition: width 0.3s;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.progress-text {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.upload-actions button {
+  flex: 1;
+}
+
+.empty-result {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-result p {
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.empty-hint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.resultado-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.resultado-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resultado-item label {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.resultado-valor {
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+}
+
+.resultado-valor.found {
+  background: var(--gradient-success);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.resultado-valor.not-found {
+  color: var(--text-light);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+}
+
+.resultado-descricao {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 500;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.resultado-tipo {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.resultado-tipo.receita {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.resultado-tipo.despesa {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.resultado-confianca {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.confianca-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.confianca-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.resultado-confianca span {
+  color: var(--text-light);
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+
+.resultado-texto {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.resultado-texto pre {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.warning {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
+  color: #fbbf24;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .page-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .upload-label {
+    padding: 2rem 1rem;
+  }
+
+  .upload-icon {
+    font-size: 3rem;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+  }
+
+  .upload-actions button {
+    width: 100%;
+  }
+
+  .resultado-valor {
+    font-size: 1.5rem;
+  }
+
+  .resultado-container {
+    gap: 1.25rem;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .resultado-valor {
+    font-size: 1.25rem;
+  }
+}
