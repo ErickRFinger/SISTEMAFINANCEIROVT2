@@ -7,12 +7,12 @@ import passwordRoutes from './routes/password.js';
 import transacoesRoutes from './routes/transacoes.js';
 import categoriasRoutes from './routes/categorias.js';
 import perfilRoutes from './routes/perfil.js';
-// EMERGENCIA: Desativando rotas problematicas para servidor subir
-// import ocrRoutes from './routes/ocr.js';
-// import metasRoutes from './routes/metas.js';
-// import bancosRoutes from './routes/bancos.js';
-// import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
-// import investimentosRoutes from './routes/investimentos.js';
+// Retomando rotas após correção do Lazy Load no Gemini
+import ocrRoutes from './routes/ocr.js';
+import metasRoutes from './routes/metas.js';
+import bancosRoutes from './routes/bancos.js';
+import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
+import investimentosRoutes from './routes/investimentos.js';
 
 dotenv.config();
 
@@ -92,11 +92,11 @@ app.use('/api/password', passwordRoutes);
 app.use('/api/transacoes', transacoesRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/perfil', perfilRoutes);
-// app.use('/api/ocr', ocrRoutes);
-// app.use('/api/metas', metasRoutes);
-// app.use('/api/bancos', bancosRoutes);
-// app.use('/api/gastos-recorrentes', gastosRecorrentesRoutes);
-// app.use('/api/investimentos', investimentosRoutes);
+app.use('/api/ocr', ocrRoutes);
+app.use('/api/metas', metasRoutes);
+app.use('/api/bancos', bancosRoutes);
+app.use('/api/gastos-recorrentes', gastosRecorrentesRoutes);
+app.use('/api/investimentos', investimentosRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

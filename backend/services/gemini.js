@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Inicializar Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Inicializar Gemini (Lazy Load)
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Função para converter arquivo para GenerativePart
 function fileToGenerativePart(path, mimeType) {
@@ -27,6 +27,10 @@ export async function processReceiptWithGemini(imagePath) {
             console.error('❌ FATAL: GEMINI_API_KEY não encontrada no process.env');
             throw new Error('CONFIGURAÇÃO: Chave GEMINI_API_KEY faltando no servidor.');
         }
+
+        // Inicialização Lazy (Segura)
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Verificar se arquivo existe
         if (!fs.existsSync(imagePath)) {
