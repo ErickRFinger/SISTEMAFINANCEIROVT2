@@ -103,6 +103,16 @@ export default function LeitorNotas() {
             text: response.data.mensagem || 'Imagem processada. Revise os dados antes de criar a transação.'
           })
         }
+      } else {
+        // RESPOSTA DE ERRO (STATUS 200 MAS COM ERRO NO CORPO - BYPASS VERCEL)
+        throw {
+          response: {
+            data: {
+              error: response.data.error || 'Erro processado pelo servidor',
+              detalhes: response.data.detalhes || JSON.stringify(response.data)
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Erro ao processar:', error)
