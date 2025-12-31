@@ -286,6 +286,16 @@ export default function LeitorNotas() {
               {loading ? '⏳ Processando...' : '✨ Processar e Criar Transação'}
             </button>
           </div>
+
+          {/* DEBUG VISUAL: MOSTRAR ERRO NA CARA DO USUÁRIO */}
+          {mensagem.type === 'error' && (
+            <div style={{ marginTop: '20px', padding: '10px', background: '#300', border: '1px solid red', borderRadius: '8px' }}>
+              <p style={{ color: 'red', fontWeight: 'bold' }}>ERRO TÉCNICO DETALHADO:</p>
+              <pre style={{ color: '#ffbaba', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
+                {mensagem.text}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* Resultado */}

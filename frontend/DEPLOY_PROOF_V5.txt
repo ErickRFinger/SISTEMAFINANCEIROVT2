@@ -1,0 +1,5 @@
+DEPLOY PROOF V5 - 2025-12-31-11-10
+Se você está lendo isso no GitHub, o código subiu.
+Se você NÃO ver as mudanças no site, o Vercel está travado no cache ou olhando a pasta errada.
+MAS O CÓDIGO ESTÁ AQUI.
+INVASIVE FIX APPLIED.

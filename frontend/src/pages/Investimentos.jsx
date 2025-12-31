@@ -107,8 +107,32 @@ export default function Investimentos() {
         outros: 'Outros'
     }
 
+    // FIX VISUAL: FORÇAR TEMA ESCURO VIA INLINE STYLE (JÁ QUE O CSS NÃO ESTÁ ATUALIZANDO)
+    const invasiveDarkStyles = `
+      .invest-stat-card, .novo-investimento-card, .investimento-card {
+        background-color: #1f2937 !important; /* Cinza Escuro */
+        border: 1px solid #374151 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+        color: white !important;
+        backdrop-filter: none !important;
+      }
+      .investimento-type-badge {
+        background-color: #374151 !important;
+        color: #e5e7eb !important;
+        border: 1px solid #4b5563 !important;
+      }
+      .investimentos-header h2, .invest-stat-value, .invest-val, .novo-investimento-header h3 {
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+      }
+      .invest-label, .investimentos-subtitle, .invest-stat-info h3 {
+        color: #9ca3af !important;
+      }
+    `;
+
     return (
-        <div className="container investimentos-container">
+        <div className="investimentos-container">
+            <style>{invasiveDarkStyles}</style>
 
             {/* <Sidebar /> */}
             <div className="investimentos-header">
