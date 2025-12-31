@@ -5,7 +5,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
+    /* PWA DESATIVADO TEMPORARIAMENTE PARA RESOLVER CACHE
     VitePWA({
+      injectRegister: null, 
+      selfDestroying: true, 
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
@@ -38,9 +41,15 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false 
+      },
+      workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
       }
     })
+    */
   ],
   server: {
     port: 3000,

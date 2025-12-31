@@ -60,6 +60,13 @@ function AppRoutes() {
 }
 
 function App() {
+  // PROVA DE DEPLOY V5
+  React.useEffect(() => {
+    console.log('V5.0 ATIVO')
+    document.title = "FINANCEIRO V5.0"
+    // alert("SISTEMA ATUALIZADO V5.0! \nSe você está vendo isso, o deploy funcionou.")
+  }, [])
+
   return (
     <Router>
       <AuthProvider>
