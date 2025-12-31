@@ -114,8 +114,10 @@ api.interceptors.response.use(
       }
     } else if (error.request) {
       // Erro de conexão
+      // Erro de conexão
       console.error('❌ Sem resposta do servidor:', url)
-      return Promise.reject(new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando.'))
+      const targetUrl = error.config?.baseURL || 'URL desconhecida'
+      return Promise.reject(new Error(`Não foi possível conectar ao servidor em: ${targetUrl}\nVerifique se o backend está rodando e a variável VITE_API_URL está correta.`))
     } else {
       // Outro erro
       console.error('❌ Erro na configuração da requisição:', error.message)
