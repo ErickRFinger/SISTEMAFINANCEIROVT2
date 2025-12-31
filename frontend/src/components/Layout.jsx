@@ -26,7 +26,7 @@ export default function Layout() {
         <div className="nav-container">
           <div className="nav-brand">
             <Link to="/dashboard" onClick={closeMenu}>
-              <h1>💰 Financeiro <small style={{ fontSize: '0.6rem', opacity: 0.7 }}>v2.1</small></h1>
+              <h1>💰 Financeiro</h1>
             </Link>
           </div>
 
