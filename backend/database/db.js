@@ -46,7 +46,11 @@ try {
   }
 } catch (error) {
   console.error('❌ [DB] Erro ao criar cliente:', error);
-  throw error;
+  // PREVENIR CRASH NO VERCEL: Retornar mock em vez de derrubar o servidor
+  supabase = {
+    from: () => ({ select: () => Promise.reject(new Error(`Erro de Inicialização do Supabase: ${error.message}`)) }),
+    auth: { getUser: () => Promise.reject(new Error('Supabase não inicializado')) }
+  };
 }
 
 export default supabase;
