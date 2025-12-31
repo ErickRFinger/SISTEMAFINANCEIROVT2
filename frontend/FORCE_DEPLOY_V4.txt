@@ -1,0 +1,3 @@
+DEPLOY_TRIGGER_V4 - 2025-12-31-11-05
+Esta arquivo precisa aparecer no seu Git.
+Se nao aparecer, voce está na pasta errada ou o git está travado.

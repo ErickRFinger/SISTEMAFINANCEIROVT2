@@ -107,28 +107,8 @@ export default function Investimentos() {
         outros: 'Outros'
     }
 
-    // INVASIVE FIX: CSS INJETADO PARA OBLITERAR O FUNDO BRANCO
-    const premiumStyles = `
-      .invest-stat-card, .novo-investimento-card, .investimento-card {
-        background: rgba(255, 255, 255, 0.85) !important;
-        backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
-        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1) !important;
-      }
-      .investimento-type-badge {
-        background: rgba(99, 102, 241, 0.15) !important;
-        border: none !important;
-      }
-      .investimentos-header h2 {
-        background: -webkit-linear-gradient(45deg, #4f46e5, #06b6d4) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-      }
-    `;
-
     return (
         <div className="container investimentos-container">
-            <style>{premiumStyles}</style>
 
             {/* <Sidebar /> */}
             <div className="investimentos-header">
