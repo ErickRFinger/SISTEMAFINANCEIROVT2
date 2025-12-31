@@ -30,8 +30,8 @@ export async function processReceiptWithGemini(imagePath) {
 
         // Inicialização Lazy (Segura)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Trocando para gemini-1.5-pro (Mais robusto, evita 404 do Flash em algumas keys)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        // Trocando para gemini-2.0-flash (Modelo disponível na sua conta, 1.5 não apareceu na lista)
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         // Verificar se arquivo existe
         if (!fs.existsSync(imagePath)) {

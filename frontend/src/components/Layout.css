@@ -154,51 +154,83 @@
 /* Mobile Styles */
 @media (max-width: 768px) {
   .nav-container {
-    padding: 1rem;
-    flex-wrap: wrap;
+    padding: 0.5rem 1rem;
+    flex-wrap: nowrap;
+    /* Impede quebra de linha */
+    gap: 0.5rem;
+    height: 60px;
+    /* Altura fixa compacta */
   }
 
-  .menu-toggle {
-    display: flex;
-    order: 2;
-  }
-
+  /* Logo */
   .nav-brand {
-    order: 1;
-    flex: 1;
+    flex: 0 0 auto;
+    margin-right: auto;
+    /* Empurra o resto para a direita */
   }
 
   .nav-brand h1 {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
 
+  /* User Section (Name + Logout) */
   .nav-user {
-    order: 3;
-    width: 100%;
-    justify-content: space-between;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    width: auto;
+    order: 2;
+    /* Fica entre logo e menu */
   }
 
   .nav-user-name {
     display: block;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    /* Nome bem pequeno */
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-light);
   }
 
+  .nav-user button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    height: auto;
+    min-height: unset;
+    width: auto;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Hamburger Toggle */
+  .menu-toggle {
+    display: flex;
+    order: 3;
+    padding: 0.25rem;
+    margin-left: 0.5rem;
+  }
+
+  /* Menu Dropdown */
   .nav-menu {
     display: none;
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    /* Fixed para cobrir tela se precisar, ou absolute no container */
+    top: 60px;
+    /* Abaixo do header */
     left: 0;
     right: 0;
     background: var(--bg-card);
     flex-direction: column;
     padding: 1rem;
-    box-shadow: var(--shadow-lg);
-    border-top: 1px solid var(--border);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--border);
     gap: 0.5rem;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 60px);
     overflow-y: auto;
   }
 
@@ -208,9 +240,10 @@
 
   .nav-link {
     width: 100%;
-    padding: 1rem;
+    padding: 0.75rem;
     text-align: left;
     border-radius: 0.5rem;
+    font-size: 0.9rem;
   }
 
   .main-content {
@@ -218,22 +251,4 @@
   }
 }
 
-@media (max-width: 480px) {
-  .nav-container {
-    padding: 0.75rem;
-  }
-
-  .nav-brand h1 {
-    font-size: 1.1rem;
-  }
-
-  .nav-user {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .nav-user button {
-    width: 100%;
-  }
-}
+/* Removemos a query 480px pois a 768px agora cobre tudo de forma compacta e fluida */
