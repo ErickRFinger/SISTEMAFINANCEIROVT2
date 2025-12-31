@@ -14,56 +14,55 @@ const router = express.Router();
 // Todas as rotas requerem autenticação
 router.use(authenticateToken);
 
-// Processar nota fiscal/comprovante
-// Debug Prévio de Configuração enviando 200 para evitar telas de erro do Vercel
-if (!process.env.GEMINI_API_KEY) {
-  console.error('❌ GEMINI_API_KEY faltando!');
-  return res.status(200).json({ // Retornando 200 intencionalmente para debug
-    success: false,
-    error: 'CONFIGURAÇÃO INVALIDA',
-    detalhes: 'A variável GEMINI_API_KEY não foi configurada no Vercel. Adicione a chave do Google AI Studio nas Settings do Projeto.'
-  });
-}
-
-// Código original wrapper
-try {
-  // ... lógica de upload ... 
-  if (!req.file) return res.status(200).json({ success: false, error: 'Nenhum arquivo recebido pelo servidor.' });
-
-  const imagePath = req.file.path;
-  try {
-    const resultado = await processReceiptWithGemini(imagePath);
-    // ... sucesso ...
-    res.json({
-      success: true,
-      resultado: {
-        texto: resultado.texto,
-        valor: resultado.valor,
-        descricao: resultado.descricao,
-        tipo: resultado.tipo,
-        confianca: resultado.confianca,
-        data: resultado.data
-      },
-      transacao: resultado.transacaoCriada || null,
-      mensagem: resultado.valor ? 'Sucesso!' : 'Processado sem valor.'
+// Rota principal de processamento
+router.post('/processar', upload.single('imagem'), async (req, res) => {
+  // Debug Prévio de Configuração enviando 200 para evitar telas de erro do Vercel
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('❌ GEMINI_API_KEY faltando!');
+    return res.status(200).json({
+      success: false,
+      error: 'CONFIGURAÇÃO INVALIDA',
+      detalhes: 'A variável GEMINI_API_KEY não foi configurada no Vercel. Adicione a chave do Google AI Studio nas Settings do Projeto.'
     });
-
-  } catch (innerError) {
-    throw innerError;
-  } finally {
-    deleteFile(imagePath);
   }
 
-} catch (error) {
-  console.error('ERRO ROTA OCR:', error);
-  // Retornar 200 com detalhes do erro para o frontend exibir na caixa vermelha
-  res.status(200).json({
-    success: false,
-    error: 'ERRO TÉCNICO',
-    detalhes: error.message,
-    stack: process.env.NODE_ENV === 'development' ? error.stack : 'Stack hidden in prod'
-  });
-}
+  try {
+    if (!req.file) return res.status(200).json({ success: false, error: 'Nenhum arquivo recebido pelo servidor.' });
+
+    const imagePath = req.file.path;
+    try {
+      const resultado = await processReceiptWithGemini(imagePath);
+
+      res.json({
+        success: true,
+        resultado: {
+          texto: resultado.texto,
+          valor: resultado.valor,
+          descricao: resultado.descricao,
+          tipo: resultado.tipo,
+          confianca: resultado.confianca,
+          data: resultado.data
+        },
+        transacao: resultado.transacaoCriada || null,
+        mensagem: resultado.valor ? 'Sucesso!' : 'Processado sem valor.'
+      });
+
+    } catch (innerError) {
+      throw innerError;
+    } finally {
+      deleteFile(imagePath);
+    }
+
+  } catch (error) {
+    console.error('ERRO ROTA OCR:', error);
+    // Retornar 200 com detalhes do erro para o frontend exibir na caixa vermelha
+    res.status(200).json({
+      success: false,
+      error: 'ERRO TÉCNICO',
+      detalhes: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : 'Stack hidden in prod'
+    });
+  }
 });
 
 // Apenas processar sem criar transação (para revisão)
