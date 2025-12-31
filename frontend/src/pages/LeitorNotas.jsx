@@ -106,6 +106,9 @@ export default function LeitorNotas() {
       }
     } catch (error) {
       console.error('Erro ao processar:', error)
+      const alertDetails = error.response?.data || error.message;
+      alert(`ERRO NO SISTEMA:\n${JSON.stringify(alertDetails, null, 2)}`); // ALERTA VISÍVEL
+
       const errorMsg = error.response?.data?.error || 'Erro ao processar imagem'
       const errorDetails = error.response?.data?.detalhes
 

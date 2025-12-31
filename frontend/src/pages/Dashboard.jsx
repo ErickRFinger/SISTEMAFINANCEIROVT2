@@ -196,11 +196,48 @@ export default function Dashboard() {
     )
   }
 
+  // INVASIVE FIX: CSS INJETADO DIRETAMENTE PARA GARANTIR VISUAL
+  const invasiveStyles = `
+    @media (max-width: 768px) {
+      .dashboard-header-container {
+        background: transparent !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin-bottom: 0.5rem !important;
+        flex-direction: row !important;
+        align-items: center !important;
+      }
+      .dashboard-header-container h2 {
+        font-size: 1.1rem !important;
+        margin: 0 !important;
+      }
+      .dashboard-subtitle, .total-guardado-subtitle {
+        display: none !important;
+      }
+      .total-guardado-card {
+        padding: 1rem !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+      }
+      .total-guardado-valor {
+        font-size: 1.5rem !important;
+      }
+      .mes-selector input {
+        width: 110px !important;
+        font-size: 0.8rem !important;
+      }
+    }
+  `;
+
   return (
-    <div className="container">
+    <div className="dashboard-container">
+      <style>{invasiveStyles}</style>
+
       <div className="dashboard-header-container">
         <div>
-          <h2>📊 Dashboard Financeiro</h2>
+          <h2>💰 Financeiro <small style={{ fontSize: '0.6rem' }}>v3.0</small></h2>
           <p className="dashboard-subtitle">Visão geral das suas finanças</p>
         </div>
         <div className="mes-selector">
