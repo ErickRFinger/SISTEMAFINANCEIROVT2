@@ -5,16 +5,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
-    /* PWA DESATIVADO TEMPORARIAMENTE PARA RESOLVER CACHE
     VitePWA({
-      injectRegister: null, 
-      selfDestroying: true, 
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Financeiro Visual - Controle Pessoal',
+        name: 'Financeiro Premium',
         short_name: 'Financeiro',
-        description: 'Sistema completo de controle financeiro pessoal',
+        description: 'Controle Financeiro Pessoal Inteligente',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
@@ -41,7 +38,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: false 
+        enabled: true // Enable for localhost testing
       },
       workbox: {
         cleanupOutdatedCaches: true,
@@ -49,7 +46,6 @@ export default defineConfig({
         clientsClaim: true,
       }
     })
-    */
   ],
   server: {
     port: 3000,
