@@ -97,68 +97,47 @@ export default function LeitorNotas() {
   const formatarMoeda = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
   return (
-    <div className="container" style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+    <div className="container" style={{ maxWidth: '800px' }}>
 
-      {/* HEADER SIMPLIFICADO */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '24px', marginBottom: '10px' }}>📄 Novo Comprovante</h2>
-        <p style={{ color: '#666' }}>Tire uma foto ou anexe um arquivo para extrair os dados automaticamente.</p>
+      <div className="page-header center">
+        <div>
+          <h2>📄 Novo Comprovante</h2>
+          <p className="page-subtitle">Tire uma foto ou anexe um arquivo para extrair os dados automaticamente.</p>
+        </div>
       </div>
 
-      {/* ÁREA DE MENSAGENS */}
       {mensagem.text && (
-        <div className={`message-box ${mensagem.type}`} style={{
-          padding: '15px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          textAlign: 'center',
-          backgroundColor: mensagem.type === 'error' ? '#fee2e2' : '#dcfce7',
-          color: mensagem.type === 'error' ? '#991b1b' : '#166534',
-          border: `1px solid ${mensagem.type === 'error' ? '#f87171' : '#86efac'}`
-        }}>
+        <div className={`message-box ${mensagem.type} glass-alert`}>
           {mensagem.text}
         </div>
       )}
 
-      <div className="grid" style={{ display: 'grid', gap: '20px' }}>
+      <div className="grid">
 
         {/* CARD DE UPLOAD */}
-        <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <div className="card upload-card">
 
           {!preview ? (
             <div
+              className="upload-area"
               onClick={() => fileInputRef.current.click()}
-              style={{
-                border: '3px dashed #cbd5e1',
-                borderRadius: '12px',
-                padding: '40px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={e => e.currentTarget.style.borderColor = '#3b82f6'}
-              onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
             >
-              <div style={{ fontSize: '48px', marginBottom: '10px' }}>📸</div>
-              <h3 style={{ margin: '0 0 10px 0', color: '#334155' }}>Toque para adicionar</h3>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>Suporta JPG, PNG e WEBP</p>
+              <div className="upload-icon">📸</div>
+              <h3 className="upload-title">Toque para adicionar</h3>
+              <p className="upload-hint">Suporta JPG, PNG e WEBP</p>
             </div>
           ) : (
-            <div style={{ position: 'relative' }}>
+            <div className="preview-container">
               <img
                 src={preview}
                 alt="Comprovante"
-                style={{ width: '100%', borderRadius: '8px', maxHeight: '400px', objectFit: 'contain', background: '#f1f5f9' }}
+                className="preview-image"
               />
               <button
                 onClick={() => setPreview(null)}
-                style={{
-                  position: 'absolute', top: '10px', right: '10px',
-                  background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none',
-                  padding: '8px 12px', borderRadius: '20px', cursor: 'pointer'
-                }}
+                className="btn-icon-overlay"
               >
-                Trocar Imagem
+                ✕
               </button>
             </div>
           )}
@@ -168,6 +147,7 @@ export default function LeitorNotas() {
             ref={fileInputRef}
             onChange={handleFileSelect}
             accept="image/*"
+            capture="environment" // Mobile camera support
             style={{ display: 'none' }}
           />
 
@@ -176,19 +156,7 @@ export default function LeitorNotas() {
             <button
               onClick={processarImagem}
               disabled={loading}
-              style={{
-                width: '100%',
-                marginTop: '20px',
-                padding: '16px',
-                background: loading ? '#94a3b8' : '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
-              }}
+              className="btn-primary full-width"
             >
               {loading ? '🔍 Lendo Comprovante...' : '✨ Ler Comprovante com IA'}
             </button>
@@ -197,62 +165,44 @@ export default function LeitorNotas() {
 
         {/* CARD DE RESULTADO (SÓ APARECE DEPOIS) */}
         {resultado && (
-          <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #2563eb' }}>
-            <h3 style={{ marginTop: 0, color: '#1e293b' }}>✅ Informações Identificadas</h3>
+          <div className="card result-card">
+            <h3>✅ Informações Identificadas</h3>
 
-            <div style={{ display: 'grid', gap: '15px' }}>
-              <div className="info-group">
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Onde gastou/recebeu?</label>
-                <div style={{ fontSize: '18px', fontWeight: '500', color: '#0f172a' }}>{resultado.descricao}</div>
+            <div className="info-grid">
+              <div className="info-group full">
+                <label>Onde gastou/recebeu?</label>
+                <div className="info-value">{resultado.descricao}</div>
               </div>
 
-              <div style={{ display: 'flex', gap: '20px' }}>
-                <div className="info-group" style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Valor</label>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>
+              <div className="info-row">
+                <div className="info-group">
+                  <label>Valor</label>
+                  <div className="info-value highlight-success">
                     {formatarMoeda(resultado.valor)}
                   </div>
                 </div>
 
-                <div className="info-group" style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Data</label>
-                  <div style={{ fontSize: '18px', color: '#0f172a' }}>
+                <div className="info-group">
+                  <label>Data</label>
+                  <div className="info-value">
                     {resultado.data ? new Date(resultado.data).toLocaleDateString('pt-BR') : 'Hoje'}
                   </div>
                 </div>
               </div>
 
               <div className="info-group">
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Categoria Sugerida</label>
-                <div style={{
-                  display: 'inline-block',
-                  padding: '4px 12px',
-                  backgroundColor: '#e0f2fe',
-                  color: '#0369a1',
-                  borderRadius: '15px',
-                  fontWeight: '500'
-                }}>
+                <label>Categoria Sugerida</label>
+                <div className="categoria-badge">
                   {resultado.categoria_sugerida || 'Geral'}
                 </div>
               </div>
 
-              <hr style={{ borderColor: '#e2e8f0', margin: '10px 0' }} />
+              <hr className="divider" />
 
               <button
                 onClick={salvarTransacao}
                 disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: '#16a34a',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.3)'
-                }}
+                className="btn-success full-width"
               >
                 {loading ? '💾 Salvando...' : '💾 Confirmar e Salvar'}
               </button>

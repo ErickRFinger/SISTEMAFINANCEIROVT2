@@ -58,6 +58,13 @@ export default function Layout() {
               💰 Transações
             </Link>
             <Link
+              to="/leitor"
+              className={isActive('/leitor') ? 'nav-link active' : 'nav-link'}
+              onClick={closeMenu}
+            >
+              📷 Leitor
+            </Link>
+            <Link
               to="/categorias"
               className={isActive('/categorias') ? 'nav-link active' : 'nav-link'}
               onClick={closeMenu}

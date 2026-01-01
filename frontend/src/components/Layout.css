@@ -226,10 +226,13 @@
     /* Abaixo do header */
     left: 0;
     right: 0;
-    background: var(--bg-card);
+    /* Menu background - Almost solid for readability */
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: 1rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid var(--border);
     gap: 0.5rem;
     max-height: calc(100vh - 60px);
