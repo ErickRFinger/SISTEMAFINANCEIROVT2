@@ -8,15 +8,14 @@ import os from 'os';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Criar diretório de uploads (Usar /tmp na Vercel, ou pasta local em dev)
+// Criar diretório de uploads - IGNORADO EM MEMORY STORAGE
+// Mantido apenas para evitar erros de referência se algo antigo chamar, mas sem efeitos colaterais.
 const uploadDir = (process.env.VERCEL || process.env.NODE_ENV === 'production')
   ? os.tmpdir()
   : path.join(__dirname, '../uploads');
 
-// Apenas tenta criar a pasta se NÃO for a pasta temporária do sistema (que já existe)
-if (uploadDir !== os.tmpdir() && !fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// REMOVIDO: fs.mkdirSync que causa crash no Vercel (Read-only OS)
+// if (uploadDir !== os.tmpdir() && ... ) { ... }
 
 // Configuração do multer memoryStorage (Ideal para Vercel/Serverless)
 const storage = multer.memoryStorage();
