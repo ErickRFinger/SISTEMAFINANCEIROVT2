@@ -1,30 +1,33 @@
+/* Layout.css - Premium Glass Navbar */
+
 .layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: transparent;
+  /* Background is on body */
 }
 
 .navbar {
-  background: var(--bg-card);
-  box-shadow: var(--shadow);
+  /* Glassmorphism Header */
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: var(--border-glass);
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(10px);
-  background: rgba(30, 41, 59, 0.95);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 .nav-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
-  position: relative;
 }
 
 .nav-brand h1 {
@@ -34,8 +37,8 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
-  font-weight: 700;
-  white-space: nowrap;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .nav-brand a {
@@ -55,94 +58,89 @@
 .hamburger {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  width: 24px;
-  height: 20px;
+  gap: 6px;
+  width: 26px;
   position: relative;
 }
 
 .hamburger span {
   display: block;
   width: 100%;
-  height: 3px;
-  background: var(--text);
+  height: 2px;
+  background: var(--text-main);
+  /* FIXED: Was --text */
   border-radius: 2px;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hamburger.open span:nth-child(1) {
-  transform: rotate(45deg) translate(8px, 8px);
+  transform: rotate(45deg) translate(5px, 6px);
 }
 
 .hamburger.open span:nth-child(2) {
   opacity: 0;
+  transform: translateX(10px);
 }
 
 .hamburger.open span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+  transform: rotate(-45deg) translate(5px, -6px);
 }
 
 .nav-menu {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex: 1;
   justify-content: center;
   align-items: center;
 }
 
 .nav-link {
-  padding: 0.75rem 1.5rem;
+  padding: 0.6rem 1rem;
   text-decoration: none;
-  color: var(--text-light);
-  border-radius: 0.75rem;
-  transition: all 0.3s;
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
   font-weight: 500;
   position: relative;
-  white-space: nowrap;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.nav-link::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  background: var(--primary);
-  transition: width 0.3s;
-}
-
+/* Hover style: Glass effect */
 .nav-link:hover {
-  color: var(--text);
-  background: var(--bg-hover);
-}
-
-.nav-link:hover::before {
-  width: 80%;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .nav-link.active {
-  background: var(--bg-hover);
+  background: rgba(99, 102, 241, 0.15);
+  /* Primary tint */
   color: var(--primary);
-}
-
-.nav-link.active::before {
-  width: 80%;
+  /* Neon Indigo */
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .nav-user {
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: var(--text-light);
+  color: var(--text-secondary);
 }
 
 .nav-user-name {
   font-weight: 500;
-  white-space: nowrap;
   display: none;
+  /* Hidden on desktop to save space, shown on mobile if needed or inverse */
+}
+
+/* User name visible purely on large screens if desired, or keep logic simple */
+@media (min-width: 1024px) {
+  .nav-user-name {
+    display: block;
+  }
 }
 
 .main-content {

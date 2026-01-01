@@ -238,7 +238,7 @@ export default function Dashboard() {
 
       <div className="dashboard-header-container">
         <div>
-          <h2>💰 Financeiro <small style={{ fontSize: '0.6rem' }}>v3.0</small></h2>
+          <h2>💰 Financeiro</h2>
           <p className="dashboard-subtitle">Visão geral das suas finanças</p>
         </div>
         <div className="mes-selector">
