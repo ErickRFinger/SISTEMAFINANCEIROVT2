@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { setTimeout } from 'timers/promises';
 
 dotenv.config();
 
@@ -18,6 +19,55 @@ function fileToGenerativePart(path, mimeType) {
     };
 }
 
+/**
+ * Tenta gerar conteúdo com retry automático para erros 429 (Too Many Requests).
+ * @param {object} model - Instância do modelo Gemini.
+ * @param {Array} prompt - Array com prompt e partes da imagem.
+ * @param {number} maxRetries - Número máximo de tentativas (padrão 3).
+ */
+async function generateContentWithRetry(model, prompt, maxRetries = 3) {
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+        try {
+            const result = await model.generateContent(prompt);
+            return result;
+        } catch (error) {
+            attempt++;
+
+            // Verifica se é erro 429 (Rate Limit) ou se contém mensagem de quota
+            const isRateLimit = error.message?.includes('429') ||
+                error.message?.includes('Quota exceeded') ||
+                error.status === 429;
+
+            if (isRateLimit && attempt < maxRetries) {
+                // Tentar extrair o tempo de espera da mensagem de erro (Google envia ex: "Please retry in 57.29s")
+                let waitTime = 2000 * Math.pow(2, attempt); // Backoff exponencial padrão: 4s, 8s, 16s...
+
+                const match = error.message?.match(/Please retry in ([\d\.]+)s/);
+                if (match && match[1]) {
+                    // Adiciona um pequeno buffer de 1s para garantir
+                    waitTime = Math.ceil(parseFloat(match[1]) * 1000) + 1000;
+                }
+
+                // Se o tempo de espera for muito longo (> 15 segundos), é melhor falhar logo para não dar timeout no frontend
+                if (waitTime > 15000) {
+                    console.warn(`⚠️ [Gemini] Tempo de espera sugerido (${waitTime}ms) é muito longo. Abortando retry.`);
+                    throw new Error(`O sistema está sobrecarregado (Rate Limit). Tente novamente em ${Math.ceil(waitTime / 1000)} segundos.`);
+                }
+
+                console.warn(`⚠️ [Gemini] Rate limit atingido (Tentativa ${attempt}/${maxRetries}). Aguardando ${waitTime}ms para tentar novamente...`);
+
+                await setTimeout(waitTime);
+                continue;
+            }
+
+            // Se não for erro de rate limit ou acabaram as tentativas, lança o erro original
+            throw error;
+        }
+    }
+}
+
 export async function processReceiptWithGemini(imagePath) {
     try {
         console.log('🤖 Iniciando processamento com Gemini AI...');
@@ -30,8 +80,8 @@ export async function processReceiptWithGemini(imagePath) {
 
         // Inicialização Lazy (Segura)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Trocando para gemini-2.0-flash (Modelo disponível na sua conta, 1.5 não apareceu na lista)
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        // Trocando para gemini-1.5-flash (Modelo estável e com melhores limites no tier gratuito)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Verificar se arquivo existe
         if (!fs.existsSync(imagePath)) {
@@ -49,7 +99,7 @@ export async function processReceiptWithGemini(imagePath) {
 
         const imagePart = fileToGenerativePart(imagePath, mimeType);
 
-        const prompt = `
+        const promptPayload = `
       Você é um assistente financeiro especializado em ler comprovantes, notas fiscais e recibos bancários.
       Analise esta imagem e extraia as seguintes informações em formato JSON estrito:
       
@@ -64,7 +114,8 @@ export async function processReceiptWithGemini(imagePath) {
       IMPORTANTE: Retorne APENAS o JSON puro, sem crases \`\`\`json ou texto adicional.
     `;
 
-        const result = await model.generateContent([prompt, imagePart]);
+        // Usando a função com retry
+        const result = await generateContentWithRetry(model, [promptPayload, imagePart]);
         const response = await result.response;
         const text = response.text();
 
@@ -93,7 +144,7 @@ export async function processReceiptWithGemini(imagePath) {
     } catch (error) {
         console.error('❌ Erro no Gemini AI:', error);
         // Fallback ou erro explícito
-        if (error.message.includes('GEMINI_API_KEY')) {
+        if (error.message && error.message.includes('GEMINI_API_KEY')) {
             throw new Error('Chave da API Gemini não configurada. Configure GEMINI_API_KEY no .env do backend.');
         }
         throw new Error('Falha ao processar imagem com IA: ' + error.message);
