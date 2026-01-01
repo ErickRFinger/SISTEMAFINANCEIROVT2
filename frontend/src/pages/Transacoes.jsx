@@ -161,6 +161,37 @@ export default function Transacoes() {
     return format(new Date(data), "dd/MM/yyyy")
   }
 
+  // --- NOVA FUNCIONALIDADE: EXPORTAR PARA CSV/EXCEL ---
+  const exportToCSV = () => {
+    if (!transacoes || transacoes.length === 0) {
+      alert('Não há transações para exportar.')
+      return
+    }
+
+    // cabeçalho do CSV
+    let csvContent = "data:text/csv;charset=utf-8,"
+    csvContent += "Data;Descrição;Categoria;Tipo;Valor;Banco/Cartão\n"
+
+    transacoes.forEach(t => {
+      const data = formatarData(t.data)
+      const desc = t.descricao.replace(/;/g, ',') // Evita quebrar o CSV
+      const cat = t.categoria_nome || 'Sem Categoria'
+      const tipo = t.tipo === 'receita' ? 'Receita' : 'Despesa'
+      const valor = t.valor.toString().replace('.', ',') // Formato BR
+      const bancoCartao = `${t.banco_nome || ''} ${t.cartao_nome ? '(' + t.cartao_nome + ')' : ''}`.trim()
+
+      csvContent += `${data};${desc};${cat};${tipo};${valor};${bancoCartao}\n`
+    })
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `financeiro_relatorio_${filtros.mes}_${filtros.ano}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const categoriasFiltradas = categorias.filter(cat => !formData.tipo || cat.tipo === formData.tipo)
 
   return (
@@ -170,19 +201,24 @@ export default function Transacoes() {
           <h2>💳 Transações</h2>
           <p className="page-subtitle">Gerencie suas receitas e despesas</p>
         </div>
-        <button onClick={() => {
-          setEditing(null)
-          setFormData({
-            descricao: '',
-            valor: '',
-            tipo: 'despesa',
-            data: new Date().toISOString().split('T')[0],
-            categoria_id: ''
-          })
-          setShowModal(true)
-        }} className="btn-primary">
-          + Nova Transação
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <button onClick={exportToCSV} className="btn-secondary">
+            📊 Exportar Relatório
+          </button>
+          <button onClick={() => {
+            setEditing(null)
+            setFormData({
+              descricao: '',
+              valor: '',
+              tipo: 'despesa',
+              data: new Date().toISOString().split('T')[0],
+              categoria_id: ''
+            })
+            setShowModal(true)
+          }} className="btn-primary">
+            + Nova Transação
+          </button>
+        </div>
       </div>
 
       <div className="card">

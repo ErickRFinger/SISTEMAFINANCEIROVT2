@@ -93,19 +93,6 @@ export default function Layout() {
               📈 Investimentos
             </Link>
             <Link
-              to="/leitor"
-              className={isActive('/leitor') ? 'nav-link active special-link' : 'nav-link special-link'}
-              onClick={closeMenu}
-              style={{
-                background: 'var(--gradient-primary)',
-                color: 'white',
-                borderRadius: '0.5rem',
-                margin: '0 0.5rem'
-              }}
-            >
-              📷 Comprovante
-            </Link>
-            <Link
               to="/perfil"
               className={isActive('/perfil') ? 'nav-link active' : 'nav-link'}
               onClick={closeMenu}

@@ -50,10 +50,11 @@ async function generateContentWithRetry(model, prompt, maxRetries = 3) {
                     waitTime = Math.ceil(parseFloat(match[1]) * 1000) + 1000;
                 }
 
-                // Se o tempo de espera for muito longo (> 15 segundos), é melhor falhar logo para não dar timeout no frontend
-                if (waitTime > 15000) {
-                    console.warn(`⚠️ [Gemini] Tempo de espera sugerido (${waitTime}ms) é muito longo. Abortando retry.`);
-                    throw new Error(`O sistema está sobrecarregado (Rate Limit). Tente novamente em ${Math.ceil(waitTime / 1000)} segundos.`);
+                // Se o tempo de espera for muito longo (> 5 segundos), sugerimos abortar este modelo e tentar outro
+                // Isso é fundamental para a estratégia de "fail fast" do loop principal
+                if (waitTime > 5000) {
+                    console.warn(`⚠️ [Gemini] Tempo de espera sugerido (${waitTime}ms) é muito longo. Abortando retry neste modelo.`);
+                    throw new Error(`O sistema está sobrecarregado (Rate Limit). Abortando para tentar outro modelo.`);
                 }
 
                 console.warn(`⚠️ [Gemini] Rate limit atingido (Tentativa ${attempt}/${maxRetries}). Aguardando ${waitTime}ms para tentar novamente...`);
@@ -65,6 +66,58 @@ async function generateContentWithRetry(model, prompt, maxRetries = 3) {
             // Se não for erro de rate limit ou acabaram as tentativas, lança o erro original
             throw error;
         }
+    }
+}
+
+// Função para descobrir qual modelo está disponível na conta do usuário (DEFINITIVA)
+async function getBestAvailableModel(apiKey) {
+    try {
+        console.log('🔍 Consultando API do Google para descobrir modelos disponíveis...');
+        // Usar fetch nativo do Node 18+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+
+        if (!response.ok) {
+            console.error(`⚠️ Falha ao listar modelos via API: ${response.status} ${response.statusText}`);
+            // Se falhar a listagem, retorna null para usar fallback hardcoded
+            return null;
+        }
+
+        const data = await response.json();
+        const models = data.models || [];
+
+        // Filtrar apenas modelos que geram conteúdo
+        const availableModels = models.filter(m =>
+            m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
+        );
+
+        console.log(`📋 Modelos encontrados na conta: ${availableModels.map(m => m.name.replace('models/', '')).join(', ')}`);
+
+        // Estratégia de Escolha (Prioridade FLASH e VELOCIDADE):
+
+        // 1. Tentar 8b (Super rápido)
+        const flash8b = availableModels.find(m => m.name.includes('flash') && m.name.includes('8b'));
+        if (flash8b) return flash8b.name.replace('models/', '');
+
+        // 2. Tentar Flash 002 (Novo rápido)
+        const flash002 = availableModels.find(m => m.name.includes('flash') && m.name.includes('002'));
+        if (flash002) return flash002.name.replace('models/', '');
+
+        // 3. Tentar Flash genérico (ex: 1.5-flash)
+        const anyFlash = availableModels.find(m => m.name.includes('flash') && !m.name.includes('8b'));
+        if (anyFlash) return anyFlash.name.replace('models/', '');
+
+        // 4. Se não achar flash, pega o Pro
+        const proModel = availableModels.find(m => m.name.includes('pro'));
+        if (proModel) return proModel.name.replace('models/', '');
+
+        // 5. Se não achar nada específico, pega o primeiro da lista
+        if (availableModels.length > 0) return availableModels[0].name.replace('models/', '');
+
+        return null;
+
+    } catch (error) {
+        console.error('⚠️ Falha na descoberta dinâmica:', error);
+        return null;
     }
 }
 
@@ -80,13 +133,14 @@ export async function processReceiptWithGemini(imagePath) {
 
         // Inicialização Lazy (Segura)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
         // Verificar se arquivo existe
         if (!fs.existsSync(imagePath)) {
             console.error(`❌ Erro: Arquivo não encontrado no caminho: ${imagePath}`);
             throw new Error('Arquivo de imagem se perdeu no upload (fs.existsSync falhou).');
         }
 
-        // Determinar mimetype com base na extensão
+        // Determinar mimetype
         const ext = imagePath.split('.').pop().toLowerCase();
         let mimeType = 'image/jpeg';
         if (ext === 'png') mimeType = 'image/png';
@@ -111,58 +165,59 @@ export async function processReceiptWithGemini(imagePath) {
       IMPORTANTE: Retorne APENAS o JSON puro, sem crases \`\`\`json ou texto adicional.
     `;
 
-        // Lista de modelos para tentar (em ordem de preferência/custo)
-        // 1. Flash: Mais rápido e barato (ideal para este caso)
-        // 2. Pro: Mais capaz, fallback se o Flash estiver indisponível
-        // Lista de modelos para tentar (em ordem de preferência/custo)
-        // Incluindo 2.0 (que sabemos que existe), 1.5 e 1.0 (legacy)
-        const MODELS_TO_TRY = [
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-001",
-            "gemini-1.5-flash-8b",
-            "gemini-2.0-flash",
-            "gemini-2.0-flash-exp",
-            "gemini-1.5-pro",
-            "gemini-1.5-pro-001",
-            "gemini-pro"
-        ];
+        // -----------------------------------------------------------
+        // SOLUÇÃO DEFINITIVA: Descoberta Dinâmica de Modelo
+        // -----------------------------------------------------------
+        let targetModel = await getBestAvailableModel(process.env.GEMINI_API_KEY);
+        let modelsToTry = [];
+
+        if (targetModel) {
+            // Se descobriu um modelo, usa ele com prioridade máxima
+            modelsToTry = [targetModel];
+            // Fallback para 1.5-pro se o principal falhar (nunca gemini-pro legacy)
+            if (!targetModel.includes('pro')) modelsToTry.push('gemini-1.5-pro');
+        } else {
+            // Lista de fallback manual se a listagem falhar (SEM legacy)
+            modelsToTry = [
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-8b",
+                "gemini-2.0-flash",
+                "gemini-1.5-pro"
+            ];
+        }
 
         let lastError = null;
         let result = null;
+        let successfulModel = '';
 
         // Loop de tentativa de modelos (Fallback Strategy)
-        for (const modelName of MODELS_TO_TRY) {
+        for (const modelName of modelsToTry) {
             try {
                 console.log(`🤖 Tentando modelo: ${modelName}...`);
                 const model = genAI.getGenerativeModel({ model: modelName });
 
-                // Tenta gerar com o modelo atual
                 result = await generateContentWithRetry(model, [promptPayload, imagePart]);
 
-                // Se chegou aqui, funcionou!
-                console.log(`✅ Sucesso com o modelo: ${modelName}`);
+                successfulModel = modelName;
+                console.log(`✅ Sucesso confirmado com: ${modelName}`);
                 break;
             } catch (error) {
                 lastError = error;
-                // Verificar se é erro de "Modelo não encontrado" (404) ou "Não suportado"
-                const isModelError = error.message?.includes('404') ||
-                    error.message?.includes('not found') ||
-                    error.message?.includes('not supported');
+                const msg = error.message || '';
 
-                // Verificar se é Rate Limit ou nosso erro customizado de sobrecarga
-                const isRateLimit = error.message?.includes('429') ||
-                    error.message?.includes('Quota exceeded') ||
-                    error.message?.includes('sobrecarregado') ||
-                    error.status === 429;
+                // Verificar se é Rate Limit ou erro de modelo
+                const isRateLimit = msg.includes('429') || msg.includes('Quota') || msg.includes('sobrecarregado');
+                const isModelError = msg.includes('404') || msg.includes('not found') || msg.includes('not supported');
 
                 if (isModelError || isRateLimit) {
                     const reason = isRateLimit ? 'Rate Limit/Sobrecarga' : '404/Não encontrado';
                     console.warn(`⚠️ Modelo ${modelName} falhou (${reason}). Tentando próximo...`);
-                    continue; // Tenta o próximo da lista
+                    continue;
                 }
 
-                // Se for outro erro (ex: Auth, chave inválida, erro interno), aborta o loop
-                throw error;
+                // Se for outro erro (ex: erro interno do servidor Google), tenta o próximo também
+                console.warn(`⚠️ Modelo ${modelName} erro genérico: ${msg.substring(0, 100)}...`);
+                continue;
             }
         }
 
@@ -170,6 +225,7 @@ export async function processReceiptWithGemini(imagePath) {
             console.error('❌ Todos os modelos falharam.');
             throw lastError || new Error('Nenhum modelo Gemini disponível no momento.');
         }
+
         const response = await result.response;
         const text = response.text();
 
@@ -180,27 +236,26 @@ export async function processReceiptWithGemini(imagePath) {
 
         const data = JSON.parse(cleanText);
 
-        if (!data) {
-            throw new Error('Não foi possível extrair dados da imagem');
-        }
+        if (!data) throw new Error('Não foi possível extrair dados da imagem');
 
-        // Normalizar retorno para bater com o esperado pelo frontend
+        // Normalizar retorno
         return {
-            texto: 'Processado via Gemini AI\n' + JSON.stringify(data, null, 2),
+            texto: 'Processado via Gemini AI (' + successfulModel + ')\n' + JSON.stringify(data, null, 2),
             valor: data.valor,
             descricao: data.descricao,
             tipo: data.tipo,
             data: data.data,
             categoria_sugerida: data.categoria_sugerida,
-            confianca: 0.95 // Gemini costuma ser muito preciso
+            confianca: 0.95
         };
 
     } catch (error) {
         console.error('❌ Erro no Gemini AI:', error);
-        // Fallback ou erro explícito
+
         if (error.message && error.message.includes('GEMINI_API_KEY')) {
-            throw new Error('Chave da API Gemini não configurada. Configure GEMINI_API_KEY no .env do backend.');
+            throw new Error('Chave da API Gemini não configurada.');
         }
-        throw new Error('Falha ao processar imagem com IA: ' + error.message);
+
+        throw new Error('Falha ao processar imagem: ' + error.message);
     }
 }

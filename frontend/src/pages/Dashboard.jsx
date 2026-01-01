@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
 import { format } from 'date-fns'
+import FinancialCharts from '../components/FinancialCharts'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -276,33 +277,8 @@ export default function Dashboard() {
         <p className="total-guardado-valor">{formatarMoeda(totalGuardado)}</p>
       </div>
 
-      {/* Ganho Fixo */}
-      {perfil.ganho_fixo_mensal > 0 && (
-        <div className="card ganho-fixo-card">
-          <div className="ganho-fixo-header">
-            <div>
-              <h3>💰 Ganho Fixo Mensal</h3>
-              <p className="ganho-fixo-valor">{formatarMoeda(perfil.ganho_fixo_mensal)}</p>
-            </div>
-            <Link to="/perfil" className="btn-secondary btn-sm">
-              Configurar
-            </Link>
-          </div>
-          <div className="ganho-fixo-stats">
-            <div className="stat-item">
-              <span className="stat-label">Receitas do Mês</span>
-              <span className="stat-value">{formatarMoeda(resumo.receitas)}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Diferença</span>
-              <span className={`stat-value ${resumo.receitas >= perfil.ganho_fixo_mensal ? 'positive' : 'negative'}`}>
-                {resumo.receitas >= perfil.ganho_fixo_mensal ? '+' : ''}
-                {formatarMoeda(resumo.receitas - perfil.ganho_fixo_mensal)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* NOVOS GRÁFICOS VISUAIS */}
+      <FinancialCharts transacoes={transacoes} resumo={resumo} />
 
       {/* Cards de Resumo */}
       <div className="grid grid-3">

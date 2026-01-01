@@ -9,17 +9,21 @@
 .upload-label {
   display: block;
   cursor: pointer;
-  border: 2px dashed var(--border);
-  border-radius: 1rem;
+  border: 2px dashed rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-lg);
   padding: 3rem 2rem;
   text-align: center;
-  transition: all 0.3s;
-  background: var(--bg-secondary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-card);
+  /* Glass background */
+  backdrop-filter: var(--backdrop-blur);
 }
 
 .upload-label:hover {
   border-color: var(--primary);
-  background: var(--bg-hover);
+  background: var(--bg-card-hover);
+  box-shadow: var(--glass-shadow);
+  transform: translateY(-2px);
 }
 
 .upload-placeholder {
