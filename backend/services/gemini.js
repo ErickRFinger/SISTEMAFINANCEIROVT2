@@ -80,9 +80,6 @@ export async function processReceiptWithGemini(imagePath) {
 
         // Inicialização Lazy (Segura)
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Trocando para gemini-1.5-flash-001 (Versão específica para evitar erro 404 de alias)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
-
         // Verificar se arquivo existe
         if (!fs.existsSync(imagePath)) {
             console.error(`❌ Erro: Arquivo não encontrado no caminho: ${imagePath}`);
@@ -114,8 +111,53 @@ export async function processReceiptWithGemini(imagePath) {
       IMPORTANTE: Retorne APENAS o JSON puro, sem crases \`\`\`json ou texto adicional.
     `;
 
-        // Usando a função com retry
-        const result = await generateContentWithRetry(model, [promptPayload, imagePart]);
+        // Lista de modelos para tentar (em ordem de preferência/custo)
+        // 1. Flash: Mais rápido e barato (ideal para este caso)
+        // 2. Pro: Mais capaz, fallback se o Flash estiver indisponível
+        const MODELS_TO_TRY = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-001",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-1.5-pro-latest"
+        ];
+
+        let lastError = null;
+        let result = null;
+
+        // Loop de tentativa de modelos (Fallback Strategy)
+        for (const modelName of MODELS_TO_TRY) {
+            try {
+                console.log(`🤖 Tentando modelo: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+
+                // Tenta gerar com o modelo atual
+                result = await generateContentWithRetry(model, [promptPayload, imagePart]);
+
+                // Se chegou aqui, funcionou!
+                console.log(`✅ Sucesso com o modelo: ${modelName}`);
+                break;
+            } catch (error) {
+                lastError = error;
+                // Verificar se é erro de "Modelo não encontrado" (404) ou "Não suportado"
+                const isModelError = error.message?.includes('404') ||
+                    error.message?.includes('not found') ||
+                    error.message?.includes('not supported');
+
+                if (isModelError) {
+                    console.warn(`⚠️ Modelo ${modelName} falhou (404/Não encontrado). Tentando próximo...`);
+                    continue; // Tenta o próximo da lista
+                }
+
+                // Se for outro erro (ex: Auth, chave inválida, erro interno), aborta o loop
+                throw error;
+            }
+        }
+
+        if (!result) {
+            console.error('❌ Todos os modelos falharam.');
+            throw lastError || new Error('Nenhum modelo Gemini disponível no momento.');
+        }
         const response = await result.response;
         const text = response.text();
 
