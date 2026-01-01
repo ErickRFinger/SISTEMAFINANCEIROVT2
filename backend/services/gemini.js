@@ -114,12 +114,17 @@ export async function processReceiptWithGemini(imagePath) {
         // Lista de modelos para tentar (em ordem de preferência/custo)
         // 1. Flash: Mais rápido e barato (ideal para este caso)
         // 2. Pro: Mais capaz, fallback se o Flash estiver indisponível
+        // Lista de modelos para tentar (em ordem de preferência/custo)
+        // Incluindo 2.0 (que sabemos que existe), 1.5 e 1.0 (legacy)
         const MODELS_TO_TRY = [
             "gemini-1.5-flash",
             "gemini-1.5-flash-001",
-            "gemini-1.5-flash-latest",
+            "gemini-1.5-flash-8b",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-exp",
             "gemini-1.5-pro",
-            "gemini-1.5-pro-latest"
+            "gemini-1.5-pro-001",
+            "gemini-pro"
         ];
 
         let lastError = null;
