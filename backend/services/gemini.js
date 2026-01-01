@@ -149,8 +149,15 @@ export async function processReceiptWithGemini(imagePath) {
                     error.message?.includes('not found') ||
                     error.message?.includes('not supported');
 
-                if (isModelError) {
-                    console.warn(`⚠️ Modelo ${modelName} falhou (404/Não encontrado). Tentando próximo...`);
+                // Verificar se é Rate Limit ou nosso erro customizado de sobrecarga
+                const isRateLimit = error.message?.includes('429') ||
+                    error.message?.includes('Quota exceeded') ||
+                    error.message?.includes('sobrecarregado') ||
+                    error.status === 429;
+
+                if (isModelError || isRateLimit) {
+                    const reason = isRateLimit ? 'Rate Limit/Sobrecarga' : '404/Não encontrado';
+                    console.warn(`⚠️ Modelo ${modelName} falhou (${reason}). Tentando próximo...`);
                     continue; // Tenta o próximo da lista
                 }
 
