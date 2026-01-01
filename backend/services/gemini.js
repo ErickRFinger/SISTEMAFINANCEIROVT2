@@ -10,13 +10,173 @@ dotenv.config();
 // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Função para converter arquivo para GenerativePart
-function fileToGenerativePart(path, mimeType) {
+// Função para converter arquivo ou buffer para GenerativePart
+function fileToGenerativePart(fileData) {
+    // Se for buffer (memória)
+    if (fileData.buffer) {
+        return {
+            inlineData: {
+                data: fileData.buffer.toString("base64"),
+                mimeType: fileData.mimeType
+            },
+        };
+    }
+    // Se for caminho de arquivo (disco)
     return {
         inlineData: {
-            data: Buffer.from(fs.readFileSync(path)).toString("base64"),
-            mimeType
+            data: Buffer.from(fs.readFileSync(fileData.path)).toString("base64"),
+            mimeType: fileData.mimeType
         },
     };
+}
+
+// ... generateContentWithRetry e getBestAvailableModel continuam iguais ...
+
+export async function processReceiptWithGemini(fileInput) {
+    // fileInput pode ser string (caminho) ou objeto (req.file do multer memory)
+    // Adaptação para suportar tanto path quanto buffer
+    try {
+        console.log('🤖 Iniciando processamento com Gemini AI...');
+
+        let imagePart;
+        let mimeType = 'image/jpeg'; // Default
+
+        if (typeof fileInput === 'string') {
+            // Modo Legado: Caminho de arquivo
+            console.log('   Modo: Arquivo em disco:', fileInput);
+            if (!fs.existsSync(fileInput)) throw new Error(`Arquivo não encontrado: ${fileInput}`);
+
+            const ext = fileInput.split('.').pop().toLowerCase();
+            if (ext === 'png') mimeType = 'image/png';
+            if (ext === 'webp') mimeType = 'image/webp';
+
+            imagePart = fileToGenerativePart({ path: fileInput, mimeType });
+
+        } else if (fileInput.buffer) {
+            // Modo Vercel: Buffer em memória
+            console.log('   Modo: Buffer em memória (Serverless Friendly)');
+            mimeType = fileInput.mimetype || 'image/jpeg';
+            imagePart = fileToGenerativePart({ buffer: fileInput.buffer, mimeType });
+        } else {
+            throw new Error('Input inválido para processamento Gemini (nem path nem buffer).');
+        }
+
+        if (!process.env.GEMINI_API_KEY) {
+            console.error('❌ FATAL: GEMINI_API_KEY não encontrada no process.env');
+            throw new Error('CONFIGURAÇÃO: Chave GEMINI_API_KEY faltando no servidor.');
+        }
+
+        // Inicialização Lazy (Segura)
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+        const promptPayload = `
+      Você é um assistente financeiro especializado em ler comprovantes, notas fiscais e recibos bancários.
+      Analise esta imagem e extraia as seguintes informações em formato JSON estrito:
+      
+      1. "valor": O valor total da transação (número, exemplo: 25.50).
+      2. "descricao": Uma descrição curta e clara do que foi gasto ou recebido (ex: "Almoço Restaurante X", "Uber", "Salário").
+      3. "tipo": "receita" se for dinheiro entrando (depósito, pix recebido, salário) ou "despesa" se for dinheiro saindo (compra, pagamento, transferência enviada).
+      4. "data": A data da transação no formato YYYY-MM-DD (se não encontrar, use a data de hoje).
+      5. "categoria_sugerida": Uma categoria sugerida para este gasto (ex: Alimentação, Transporte, Saúde, Moradia, Salário, Lazer, Outros).
+
+      Se não conseguir identificar algum campo, tente inferir pelo contexto. Se a imagem não for um comprovante legível, retorne null no JSON.
+      
+      IMPORTANTE: Retorne APENAS o JSON puro, sem crases \`\`\`json ou texto adicional.
+    `;
+
+        // -----------------------------------------------------------
+        // SOLUÇÃO DEFINITIVA: Descoberta Dinâmica de Modelo
+        // -----------------------------------------------------------
+        let targetModel = await getBestAvailableModel(process.env.GEMINI_API_KEY);
+        let modelsToTry = [];
+
+        if (targetModel) {
+            // Se descobriu um modelo, usa ele com prioridade máxima
+            modelsToTry = [targetModel];
+            // Fallback para 1.5-pro se o principal falhar (nunca gemini-pro legacy)
+            if (!targetModel.includes('pro')) modelsToTry.push('gemini-1.5-pro');
+        } else {
+            // Lista de fallback manual se a listagem falhar (SEM legacy)
+            modelsToTry = [
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-8b",
+                "gemini-2.0-flash",
+                "gemini-1.5-pro"
+            ];
+        }
+
+        let lastError = null;
+        let result = null;
+        let successfulModel = '';
+
+        // Loop de tentativa de modelos (Fallback Strategy)
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`🤖 Tentando modelo: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+
+                result = await generateContentWithRetry(model, [promptPayload, imagePart]);
+
+                successfulModel = modelName;
+                console.log(`✅ Sucesso confirmado com: ${modelName}`);
+                break;
+            } catch (error) {
+                lastError = error;
+                const msg = error.message || '';
+
+                // Verificar se é Rate Limit ou erro de modelo
+                const isRateLimit = msg.includes('429') || msg.includes('Quota') || msg.includes('sobrecarregado');
+                const isModelError = msg.includes('404') || msg.includes('not found') || msg.includes('not supported');
+
+                if (isModelError || isRateLimit) {
+                    const reason = isRateLimit ? 'Rate Limit/Sobrecarga' : '404/Não encontrado';
+                    console.warn(`⚠️ Modelo ${modelName} falhou (${reason}). Tentando próximo...`);
+                    continue;
+                }
+
+                // Se for outro erro (ex: erro interno do servidor Google), tenta o próximo também
+                console.warn(`⚠️ Modelo ${modelName} erro genérico: ${msg.substring(0, 100)}...`);
+                continue;
+            }
+        }
+
+        if (!result) {
+            console.error('❌ Todos os modelos falharam.');
+            throw lastError || new Error('Nenhum modelo Gemini disponível no momento.');
+        }
+
+        const response = await result.response;
+        const text = response.text();
+
+        console.log('🤖 Resposta Bruta Gemini:', text);
+
+        // Limpar formatação markdown se houver
+        const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const data = JSON.parse(cleanText);
+
+        if (!data) throw new Error('Não foi possível extrair dados da imagem');
+
+        // Normalizar retorno
+        return {
+            texto: 'Processado via Gemini AI (' + successfulModel + ')\n' + JSON.stringify(data, null, 2),
+            valor: data.valor,
+            descricao: data.descricao,
+            tipo: data.tipo,
+            data: data.data,
+            categoria_sugerida: data.categoria_sugerida,
+            confianca: 0.95
+        };
+
+    } catch (error) {
+        console.error('❌ Erro no Gemini AI:', error);
+
+        if (error.message && error.message.includes('GEMINI_API_KEY')) {
+            throw new Error('Chave da API Gemini não configurada.');
+        }
+
+        throw new Error('Falha ao processar imagem: ' + error.message);
+    }
 }
 
 /**

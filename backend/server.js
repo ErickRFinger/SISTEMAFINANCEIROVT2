@@ -13,6 +13,7 @@ import metasRoutes from './routes/metas.js';
 import bancosRoutes from './routes/bancos.js';
 import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
 import investimentosRoutes from './routes/investimentos.js';
+import setupRoutes from './routes/setup.js';
 
 dotenv.config();
 
@@ -97,6 +98,7 @@ app.use('/api/metas', metasRoutes);
 app.use('/api/bancos', bancosRoutes);
 app.use('/api/gastos-recorrentes', gastosRecorrentesRoutes);
 app.use('/api/investimentos', investimentosRoutes);
+app.use('/api/setup', setupRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

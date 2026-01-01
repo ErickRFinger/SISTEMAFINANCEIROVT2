@@ -18,16 +18,8 @@ if (uploadDir !== os.tmpdir() && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configuração do multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configuração do multer memoryStorage (Ideal para Vercel/Serverless)
+const storage = multer.memoryStorage();
 
 // Filtro de arquivos
 const fileFilter = (req, file, cb) => {
@@ -50,14 +42,17 @@ export const upload = multer({
   fileFilter: fileFilter
 });
 
-// Função para limpar arquivo após processamento
+// Função para limpar arquivo (No-op para memória, mas mantido para compatibilidade)
 export const deleteFile = (filePath) => {
+  // Em memória não precisa deletar arquivo físico
   try {
-    if (fs.existsSync(filePath)) {
+    if (filePath && typeof filePath === 'string' && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
-  } catch (error) {
-    console.error('Erro ao deletar arquivo:', error);
+  } catch (e) {
+    // ignorar
   }
 };
+
+
 

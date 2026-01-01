@@ -29,9 +29,12 @@ router.post('/processar', upload.single('imagem'), async (req, res) => {
   try {
     if (!req.file) return res.status(200).json({ success: false, error: 'Nenhum arquivo recebido pelo servidor.' });
 
-    const imagePath = req.file.path;
+    // Modificado para suportar MemoryStorage (Serverless)
+    // Se req.file.buffer existe, passamos o objeto inteiro. Se path existe, passamos o path.
+    const fileInput = req.file.buffer ? req.file : req.file.path;
+
     try {
-      const resultado = await processReceiptWithGemini(imagePath);
+      const resultado = await processReceiptWithGemini(fileInput);
 
       res.json({
         success: true,
@@ -72,10 +75,11 @@ router.post('/processar-preview', upload.single('imagem'), async (req, res) => {
       return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
     }
 
-    const imagePath = req.file.path;
+    // Modificado para suportar MemoryStorage (Serverless)
+    const fileInput = req.file.buffer ? req.file : req.file.path;
 
     try {
-      const resultado = await processReceiptWithGemini(imagePath);
+      const resultado = await processReceiptWithGemini(fileInput);
 
       res.json({
         success: true,
