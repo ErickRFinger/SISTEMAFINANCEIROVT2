@@ -85,7 +85,8 @@ router.post('/processar-preview', upload.single('imagem'), async (req, res) => {
           descricao: resultado.descricao,
           tipo: resultado.tipo,
           confianca: resultado.confianca,
-          data: resultado.data
+          data: resultado.data,
+          categoria_sugerida: resultado.categoria_sugerida || resultado.categoria // Ensure category is passed
         }
       });
     } finally {

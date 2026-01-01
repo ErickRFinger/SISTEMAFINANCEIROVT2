@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import './LeitorNotas.css'
@@ -8,9 +8,23 @@ export default function LeitorNotas() {
   const [preview, setPreview] = useState(null)
   const [resultado, setResultado] = useState(null)
   const [mensagem, setMensagem] = useState({ type: '', text: '' })
+  const [categorias, setCategorias] = useState([])
   const [selectedFile, setSelectedFile] = useState(null)
   const fileInputRef = useRef(null)
   const navigate = useNavigate()
+
+  // Carregar categorias ao iniciar para mapear o nome -> ID
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await api.get('/categorias')
+        setCategorias(res.data)
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error)
+      }
+    }
+    fetchCategorias()
+  }, [])
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0]
@@ -69,26 +83,47 @@ export default function LeitorNotas() {
     }
   }
 
+  // Encontra o ID da categoria mais próxima ou usa 'Outros'
+  const findCategoriaId = (nomeSugerido) => {
+    if (!nomeSugerido || categorias.length === 0) return null
+
+    // Tenta match exato
+    const exata = categorias.find(c => c.nome.toLowerCase() === nomeSugerido.toLowerCase())
+    if (exata) return exata.id
+
+    // Tenta match parcial (ex: "Alimentação" match "Alimentação Diária")
+    const parcial = categorias.find(c => c.nome.toLowerCase().includes(nomeSugerido.toLowerCase()) || nomeSugerido.toLowerCase().includes(c.nome.toLowerCase()))
+    if (parcial) return parcial.id
+
+    // Fallback: Tenta achar categoria 'Outros' ou pega a primeira
+    const outros = categorias.find(c => c.nome.toLowerCase().includes('outros'))
+    return outros ? outros.id : categorias[0]?.id
+  }
+
   // Salva a transação no banco
   const salvarTransacao = async () => {
     if (!resultado) return
 
     setLoading(true)
     try {
+      // Mapear categoria sugerida para ID real do banco
+      const categoriaId = findCategoriaId(resultado.categoria_sugerida)
+
       await api.post('/transacoes', {
         descricao: resultado.descricao || 'Despesa não identificada',
         valor: resultado.valor || 0,
         tipo: resultado.tipo || 'despesa',
         data: resultado.data || new Date().toISOString().split('T')[0],
-        categoria: resultado.categoria_sugerida || 'Outros'
+        categoria_id: categoriaId // Envia ID, não nome string
       })
 
       setMensagem({ type: 'success', text: 'Transação salva com sucesso!' })
+      // Sucesso total - feedback visual
       setTimeout(() => navigate('/transacoes'), 1500)
 
     } catch (error) {
       console.error('Erro ao salvar:', error)
-      setMensagem({ type: 'error', text: 'Erro ao salvar transação no banco de dados.' })
+      setMensagem({ type: 'error', text: 'Erro ao salvar transação no banco de dados. Tente novamente.' })
     } finally {
       setLoading(false)
     }
@@ -102,12 +137,12 @@ export default function LeitorNotas() {
       <div className="page-header center">
         <div>
           <h2>📄 Novo Comprovante</h2>
-          <p className="page-subtitle">Tire uma foto ou anexe um arquivo para extrair os dados automaticamente.</p>
+          <p className="page-subtitle">Tire uma foto para extrair os dados automaticamente.</p>
         </div>
       </div>
 
       {mensagem.text && (
-        <div className={`message-box ${mensagem.type} glass-alert`}>
+        <div className={`message-box ${mensagem.type} glass-alert ${mensagem.type === 'error' ? 'error' : ''}`}>
           {mensagem.text}
         </div>
       )}

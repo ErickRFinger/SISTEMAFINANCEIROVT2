@@ -206,31 +206,25 @@
 }
 
 .resumo-card.receita .resumo-valor {
-  background: var(--gradient-success);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #34d399;
+  /* Bright Emerald */
+  text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
 }
 
 .resumo-card.despesa .resumo-valor {
-  background: var(--gradient-danger);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f87171;
+  /* Bright Red */
+  text-shadow: 0 0 20px rgba(248, 113, 113, 0.3);
 }
 
 .resumo-card.saldo.positivo .resumo-valor {
-  background: var(--gradient-success);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #34d399;
+  text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
 }
 
 .resumo-card.saldo.negativo .resumo-valor {
-  background: var(--gradient-danger);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f87171;
+  text-shadow: 0 0 20px rgba(248, 113, 113, 0.3);
 }
 
 .resumo-subtitle {
