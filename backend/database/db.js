@@ -41,7 +41,12 @@ try {
     console.warn('⚠️ [DB] Cliente Supabase NÃO inicializado (falta configuração)');
     // Criar um mock para não quebrar imports, mas que falhará ao usar
     supabase = {
-      from: () => ({ select: () => Promise.reject(new Error('Supabase não configurado')) })
+      from: () => ({
+        select: () => Promise.reject(new Error('Supabase não configurado')),
+        insert: () => Promise.reject(new Error('Supabase não configurado')),
+        update: () => Promise.reject(new Error('Supabase não configurado')),
+        delete: () => Promise.reject(new Error('Supabase não configurado')),
+      })
     };
   }
 } catch (error) {
