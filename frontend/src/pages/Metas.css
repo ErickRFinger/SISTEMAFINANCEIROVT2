@@ -140,6 +140,29 @@
   color: var(--text-secondary);
 }
 
+.meta-smart-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.smart-stat-item {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.smart-stat-item strong {
+  color: var(--primary);
+}
+
 .meta-categoria {
   font-weight: 600;
 }

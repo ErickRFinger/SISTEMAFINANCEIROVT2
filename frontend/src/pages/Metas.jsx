@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
-import { format } from 'date-fns'
+import { format, differenceInDays, differenceInMonths, startOfToday } from 'date-fns'
 import './Metas.css'
 
 export default function Metas() {
@@ -77,10 +77,10 @@ export default function Metas() {
       alert(editing ? 'Meta atualizada com sucesso!' : 'Meta criada com sucesso!')
     } catch (error) {
       console.error('Erro ao salvar meta:', error)
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.errors?.[0]?.msg || 
-                          error.message || 
-                          'Erro ao salvar meta'
+      const errorMessage = error.response?.data?.error ||
+        error.response?.data?.errors?.[0]?.msg ||
+        error.message ||
+        'Erro ao salvar meta'
       alert(errorMessage)
     }
   }
@@ -162,6 +162,18 @@ export default function Metas() {
     return <div className="loading">Carregando...</div>
   }
 
+  const calculateSmartStats = (meta) => {
+    const hoje = startOfToday()
+    const fim = new Date(meta.data_fim)
+    const diasRestantes = differenceInDays(fim, hoje)
+    const mesesRestantes = differenceInMonths(fim, hoje) || 1
+
+    const falta = meta.valor_meta - meta.valor_atual
+    const sugerido = falta > 0 ? (falta / Math.max(mesesRestantes, 1)) : 0
+
+    return { diasRestantes, sugerido }
+  }
+
   return (
     <div className="container">
       <div className="page-header">
@@ -241,6 +253,27 @@ export default function Metas() {
                   <span className="meta-progress-percent">{Math.round(meta.progresso || 0)}%</span>
                 </div>
               </div>
+
+              {/* SMART STATS */}
+              {meta.status === 'ativa' && (
+                <div className="meta-smart-stats">
+                  {(() => {
+                    const { diasRestantes, sugerido } = calculateSmartStats(meta)
+                    return (
+                      <>
+                        <div className="smart-stat-item">
+                          <span>⏳ {diasRestantes > 0 ? `${diasRestantes} dias restantes` : 'Vence hoje'}</span>
+                        </div>
+                        {sugerido > 0 && (
+                          <div className="smart-stat-item">
+                            <span>💡 Guardar <strong>{formatarMoeda(sugerido)}</strong>/mês</span>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
 
               <div className="meta-info">
                 <div className="meta-info-item">

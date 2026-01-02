@@ -77,28 +77,6 @@
   min-width: 130px;
   text-align: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.5px;
-}
-
-.transacao-descricao {
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--text-main);
-  margin-bottom: 0.25rem;
-}
-
-.transacao-data {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.transacao-banco-cartao {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
 }
 
 /* VALUES & ACTIONS */
