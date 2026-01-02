@@ -48,8 +48,8 @@ export default function Investimentos() {
         try {
             await api.post('/investimentos', {
                 ...novoInvestimento,
-                valor_investido: parseFloat(novoInvestimento.valor_investido),
-                valor_atual: novoInvestimento.valor_atual ? parseFloat(novoInvestimento.valor_atual) : parseFloat(novoInvestimento.valor_investido)
+                valor_investido: parseFloat(String(novoInvestimento.valor_investido).replace(',', '.')),
+                valor_atual: novoInvestimento.valor_atual ? parseFloat(String(novoInvestimento.valor_atual).replace(',', '.')) : parseFloat(String(novoInvestimento.valor_investido).replace(',', '.'))
             })
 
             setNovoInvestimento({
@@ -65,7 +65,10 @@ export default function Investimentos() {
             carregarInvestimentos()
         } catch (error) {
             console.error('Erro ao criar investimento:', error)
-            alert('Erro ao salvar investimento')
+            const msg = error.response?.data?.errors
+                ? error.response.data.errors.map(e => e.msg).join('\n')
+                : (error.response?.data?.error || 'Erro ao salvar investimento')
+            alert(`Falha ao salvar:\n${msg}`)
         } finally {
             setLoading(false)
         }

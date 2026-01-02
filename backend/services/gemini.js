@@ -250,28 +250,29 @@ async function getBestAvailableModel(apiKey) {
             m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
         );
 
-        console.log(`📋 Modelos encontrados na conta: ${availableModels.map(m => m.name.replace('models/', '')).join(', ')}`);
+        const modelNames = availableModels.map(m => m.name.replace('models/', ''));
+        console.log(`📋 Modelos encontrados: ${modelNames.join(', ')}`);
 
-        // Estratégia de Escolha (Prioridade FLASH e VELOCIDADE):
+        // Estratégia de Escolha (PRIORIDADE: ESTABILIDADE > NOVIDADE):
 
-        // 1. Tentar 8b (Super rápido)
-        const flash8b = availableModels.find(m => m.name.includes('flash') && m.name.includes('8b'));
-        if (flash8b) return flash8b.name.replace('models/', '');
+        // 1. Prioridade ABSOLUTA: Gemini 1.5 Flash (Estável, Rápido, Comprovado)
+        if (modelNames.includes('gemini-1.5-flash')) return 'gemini-1.5-flash';
 
-        // 2. Tentar Flash 002 (Novo rápido)
-        const flash002 = availableModels.find(m => m.name.includes('flash') && m.name.includes('002'));
-        if (flash002) return flash002.name.replace('models/', '');
+        // 2. Gemini 1.5 Flash Latest (Se o fixo não estiver, tenta o latest)
+        if (modelNames.includes('gemini-1.5-flash-latest')) return 'gemini-1.5-flash-latest';
 
-        // 3. Tentar Flash genérico (ex: 1.5-flash)
-        const anyFlash = availableModels.find(m => m.name.includes('flash') && !m.name.includes('8b'));
-        if (anyFlash) return anyFlash.name.replace('models/', '');
+        // 3. Gemini 2.0 Flash (Se tiver acesso ao novo estável)
+        if (modelNames.includes('gemini-2.0-flash')) return 'gemini-2.0-flash';
 
-        // 4. Se não achar flash, pega o Pro
-        const proModel = availableModels.find(m => m.name.includes('pro'));
-        if (proModel) return proModel.name.replace('models/', '');
+        // 4. Gemini 1.5 Pro (Mais robusto, um pouco mais lento)
+        if (modelNames.includes('gemini-1.5-pro')) return 'gemini-1.5-pro';
 
-        // 5. Se não achar nada específico, pega o primeiro da lista
-        if (availableModels.length > 0) return availableModels[0].name.replace('models/', '');
+        // 5. Fallback para qualquer Flash
+        const anyFlash = modelNames.find(m => m.includes('flash') && !m.includes('8b'));
+        if (anyFlash) return anyFlash;
+
+        // 6. Último recurso: o primeiro da lista
+        if (modelNames.length > 0) return modelNames[0];
 
         return null;
 
