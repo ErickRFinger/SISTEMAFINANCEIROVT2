@@ -261,6 +261,9 @@ async function getBestAvailableModel(apiKey) {
         // 2. Gemini 1.5 Flash Latest (Se o fixo não estiver, tenta o latest)
         if (modelNames.includes('gemini-1.5-flash-latest')) return 'gemini-1.5-flash-latest';
 
+        // 2.1 Gemini Flash Latest (Alias comum) - ADICIONADO
+        if (modelNames.includes('gemini-flash-latest')) return 'gemini-flash-latest';
+
         // 3. Gemini 2.0 Flash (Se tiver acesso ao novo estável)
         if (modelNames.includes('gemini-2.0-flash')) return 'gemini-2.0-flash';
 
