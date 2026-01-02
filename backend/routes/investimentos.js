@@ -47,6 +47,7 @@ router.post('/', [
 
     try {
         const userId = getUserId(req);
+        console.log(`📝 [Investimentos] Tentando criar para UserID: ${userId}`);
         const { nome, tipo, instituicao, valor_investido, valor_atual, data_aplicacao, data_vencimento, observacoes } = req.body;
 
         const { data, error } = await supabase
@@ -69,8 +70,12 @@ router.post('/', [
 
         res.status(201).json(data);
     } catch (error) {
-        console.error('Erro ao criar investimento:', error);
-        res.status(500).json({ error: 'Erro ao criar investimento' });
+        console.error('❌ Erro CRÍTICO ao criar investimento:', error);
+        res.status(500).json({
+            error: 'Erro interno ao salvar',
+            details: error.message || JSON.stringify(error),
+            hint: 'Verifique os logs do servidor para mais detalhes.'
+        });
     }
 });
 
