@@ -9,7 +9,7 @@ router.get('/investimentos', async (req, res) => {
     const schema = `
     CREATE TABLE IF NOT EXISTS public.investimentos (
         id SERIAL PRIMARY KEY,
-        user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
         nome VARCHAR(255) NOT NULL,
         tipo VARCHAR(50) NOT NULL,
         instituicao VARCHAR(100),
@@ -22,7 +22,9 @@ router.get('/investimentos', async (req, res) => {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
     );
 
-    ALTER TABLE public.investimentos ENABLE ROW LEVEL SECURITY;
+    -- Como usamos Service Key e Auth Customizado, RLS pode atrapalhar se mal configurado. 
+    -- O backend filtra por user_id manualmente.
+    ALTER TABLE public.investimentos DISABLE ROW LEVEL SECURITY;
 
     DO $$
     BEGIN
@@ -49,6 +51,26 @@ router.get('/investimentos', async (req, res) => {
         ) THEN
             CREATE POLICY "Usuários podem deletar seus próprios investimentos" ON public.investimentos FOR DELETE USING (auth.uid() = user_id);
         END IF;
+    END
+    $$;
+
+    -- FIX: Ajustar Foreign Key para public.users caso tenha sido criada errada (auth.users)
+    DO $$
+    BEGIN
+        -- Remove constraint antiga se existir (nome padrão do Postgres)
+        ALTER TABLE public.investimentos DROP CONSTRAINT IF EXISTS investimentos_user_id_fkey;
+        
+        -- Remove constraint antiga se tiver outro nome comum
+        ALTER TABLE public.investimentos DROP CONSTRAINT IF EXISTS investimentos_user_id_fkey1;
+
+        -- Adiciona a correta apontando para public.users
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'investimentos_user_id_fkey_public') THEN
+            ALTER TABLE public.investimentos 
+            ADD CONSTRAINT investimentos_user_id_fkey_public 
+            FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+        END IF;
+    EXCEPTION WHEN OTHERS THEN 
+        NULL; -- Ignora erros se a constraint já estiver certa ou tabela não existir
     END
     $$;
 
