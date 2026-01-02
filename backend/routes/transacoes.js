@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
       console.log('Filtrando lista por:', { startDate, endDate, mes, ano });
       query = query.gte('data', startDate).lte('data', endDate);
     }
-    
+
     // Remover limit se existir (não é suportado pelo Supabase desta forma)
     // O limit será feito no frontend
 
@@ -139,7 +139,7 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { descricao, valor, tipo, data, categoria_id, banco_id, cartao_id } = req.body;
+    const { descricao, valor, tipo, data, categoria_id, banco_id, cartao_id, is_recorrente } = req.body;
 
     // Verificar se categoria pertence ao usuário (se fornecida)
     if (categoria_id) {
@@ -416,7 +416,7 @@ router.get('/resumo/saldo', async (req, res) => {
       // Último dia do mês (mesNum é 1-12, então usamos mesNum para o próximo mês e dia 0 para pegar o último dia do mês atual)
       const lastDay = new Date(anoNum, mesNum, 0).getDate();
       const endDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-      
+
       console.log('Filtrando transações por:', { startDate, endDate, mes, ano, mesNum, anoNum });
       query = query.gte('data', startDate).lte('data', endDate);
     } else {
@@ -459,9 +459,9 @@ router.get('/resumo/saldo', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao calcular resumo:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao calcular resumo',
-      detalhes: error.message 
+      detalhes: error.message
     });
   }
 });
