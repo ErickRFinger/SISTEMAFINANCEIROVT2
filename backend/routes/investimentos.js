@@ -13,12 +13,12 @@ function getUserId(req) {
     return req.user.userId;
 }
 
-// GET / - Listar todos os investimentos
+// GET / - Listar todos os user_investimentos
 router.get('/', async (req, res) => {
     try {
         const userId = getUserId(req);
         const { data, error } = await supabase
-            .from('investimentos')
+            .from('user_investimentos')
             .select('*')
             .eq('user_id', userId)
             .order('valor_atual', { ascending: false });
@@ -27,8 +27,8 @@ router.get('/', async (req, res) => {
 
         res.json(data || []);
     } catch (error) {
-        console.error('Erro ao listar investimentos:', error);
-        res.status(500).json({ error: 'Erro ao listar investimentos' });
+        console.error('Erro ao listar user_investimentos:', error);
+        res.status(500).json({ error: 'Erro ao listar user_investimentos' });
     }
 });
 
@@ -51,7 +51,7 @@ router.post('/', [
         const { nome, tipo, instituicao, valor_investido, valor_atual, data_aplicacao, data_vencimento, observacoes } = req.body;
 
         const { data, error } = await supabase
-            .from('investimentos')
+            .from('user_investimentos')
             .insert([{
                 user_id: userId,
                 nome,
@@ -60,7 +60,7 @@ router.post('/', [
                 valor_investido,
                 valor_atual: valor_atual || valor_investido, // Se não passar atual, assume igual investido
                 data_aplicacao: data_aplicacao || new Date(),
-                data_vencimento,
+
                 observacoes
             }])
             .select()
@@ -94,7 +94,7 @@ router.put('/:id', async (req, res) => {
         updates.updated_at = new Date();
 
         const { data, error } = await supabase
-            .from('investimentos')
+            .from('user_investimentos')
             .update(updates)
             .eq('id', id)
             .eq('user_id', userId)
@@ -118,7 +118,7 @@ router.delete('/:id', async (req, res) => {
         const { id } = req.params;
 
         const { error } = await supabase
-            .from('investimentos')
+            .from('user_investimentos')
             .delete()
             .eq('id', id)
             .eq('user_id', userId);

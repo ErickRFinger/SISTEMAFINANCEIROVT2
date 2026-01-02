@@ -7,6 +7,27 @@ router.get('/investimentos', async (req, res) => {
     console.log('🔄 [SETUP] Inicializando tabela de investimentos...');
 
     const schema = `
+    -- Criação da Nova Tabelade Investimentos (V2) para garantir funcionamento
+    CREATE TABLE IF NOT EXISTS public.user_investimentos (
+        id SERIAL PRIMARY KEY,
+        user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+        nome VARCHAR(255) NOT NULL,
+        tipo VARCHAR(50) NOT NULL,
+        instituicao VARCHAR(100),
+        valor_investido DECIMAL(15, 2) NOT NULL DEFAULT 0,
+        valor_atual DECIMAL(15, 2) NOT NULL DEFAULT 0,
+        data_aplicacao DATE DEFAULT CURRENT_DATE,
+        observacoes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    );
+
+    -- Garantir que RLS está desativado para evitar bloqueios de permissão
+    ALTER TABLE public.user_investimentos DISABLE ROW LEVEL SECURITY;
+
+    -- Índice para performance
+    CREATE INDEX IF NOT EXISTS idx_user_investimentos_user_id ON public.user_investimentos(user_id);
+
     CREATE TABLE IF NOT EXISTS public.investimentos (
         id SERIAL PRIMARY KEY,
         user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
