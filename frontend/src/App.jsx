@@ -9,7 +9,7 @@ import Dashboard from './pages/Dashboard'
 import Transacoes from './pages/Transacoes'
 import Categorias from './pages/Categorias'
 import Perfil from './pages/Perfil'
-import LeitorNotas from './pages/LeitorNotas'
+// import LeitorNotas from './pages/LeitorNotas'
 import Metas from './pages/Metas'
 import Bancos from './pages/Bancos'
 import GastosRecorrentes from './pages/GastosRecorrentes'
@@ -49,7 +49,7 @@ function AppRoutes() {
         <Route path="transacoes" element={<Transacoes />} />
         <Route path="categorias" element={<Categorias />} />
         <Route path="perfil" element={<Perfil />} />
-        <Route path="leitor" element={<LeitorNotas />} />
+        {/* <Route path="leitor" element={<LeitorNotas />} /> Route removed as requested */}
         <Route path="metas" element={<Metas />} />
         <Route path="bancos" element={<Bancos />} />
         <Route path="gastos-recorrentes" element={<GastosRecorrentes />} />

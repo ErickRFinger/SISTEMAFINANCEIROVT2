@@ -8,13 +8,13 @@ import transacoesRoutes from './routes/transacoes.js';
 import categoriasRoutes from './routes/categorias.js';
 import perfilRoutes from './routes/perfil.js';
 // Retomando rotas após correção do Lazy Load no Gemini
-import ocrRoutes from './routes/ocr.js';
+
 import metasRoutes from './routes/metas.js';
 import bancosRoutes from './routes/bancos.js';
 import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
 import investimentosRoutes from './routes/investimentos.js';
-// Diagnostico removido temporariamente
-// import diagnosticoRoutes from './routes/diagnostico.js';
+// Retomando rotas após correção do Lazy Load no Gemini
+
 
 // ... (other imports)
 
@@ -100,7 +100,7 @@ app.use('/api/password', passwordRoutes);
 app.use('/api/transacoes', transacoesRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/perfil', perfilRoutes);
-app.use('/api/ocr', ocrRoutes);
+
 app.use('/api/metas', metasRoutes);
 app.use('/api/bancos', bancosRoutes);
 app.use('/api/gastos-recorrentes', gastosRecorrentesRoutes);
