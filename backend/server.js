@@ -13,9 +13,15 @@ import metasRoutes from './routes/metas.js';
 import bancosRoutes from './routes/bancos.js';
 import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
 import investimentosRoutes from './routes/investimentos.js';
-import setupRoutes from './routes/setup.js';
+import diagnosticoRoutes from './routes/diagnostico.js';
 
-dotenv.config();
+// ... (other imports)
+
+// Registrar rotas
+app.use('/api/auth', authRoutes);
+// ...
+app.use('/api/setup', setupRoutes);
+app.use('/api/diagnostico', diagnosticoRoutes);
 
 // Verificar variáveis de ambiente críticas
 const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
@@ -99,6 +105,7 @@ app.use('/api/bancos', bancosRoutes);
 app.use('/api/gastos-recorrentes', gastosRecorrentesRoutes);
 app.use('/api/investimentos', investimentosRoutes);
 app.use('/api/setup', setupRoutes);
+app.use('/api/diagnostico', diagnosticoRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

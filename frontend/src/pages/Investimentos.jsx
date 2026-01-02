@@ -30,8 +30,27 @@ export default function Investimentos() {
     }
 
     useEffect(() => {
-        carregarInvestimentos()
+        checkEnvironmentAndLoad()
     }, [])
+
+    const checkEnvironmentAndLoad = async () => {
+        try {
+            // Diagnóstico Pró-ativo
+            const debugReq = await api.get('/debug-env')
+            const envStatus = debugReq.data
+
+            if (!envStatus.supabase_configured) {
+                alert('🚨 ATENÇÃO: O Banco de Dados não está conectado!\n\nVocê precisa configurar as variáveis SUPABASE_URL e SUPABASE_ANON_KEY no painel da Vercel.')
+                return // Não adianta tentar carregar
+            }
+
+            carregarInvestimentos()
+        } catch (error) {
+            console.error('Falha no health-check:', error)
+            // Se falhar o check, tenta carregar mesmo assim (pode ser erro de rota)
+            carregarInvestimentos()
+        }
+    }
 
     const carregarInvestimentos = async () => {
         setLoading(true)
