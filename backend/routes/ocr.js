@@ -52,10 +52,7 @@ router.post('/processar', upload.single('imagem'), async (req, res) => {
 
     } catch (innerError) {
       throw innerError;
-    } finally {
-      deleteFile(imagePath);
     }
-
   } catch (error) {
     console.error('ERRO ROTA OCR:', error);
     // Retornar 200 com detalhes do erro para o frontend exibir na caixa vermelha
@@ -90,18 +87,14 @@ router.post('/processar-preview', upload.single('imagem'), async (req, res) => {
           tipo: resultado.tipo,
           confianca: resultado.confianca,
           data: resultado.data,
-          categoria_sugerida: resultado.categoria_sugerida || resultado.categoria // Ensure category is passed
+          categoria_sugerida: resultado.categoria_sugerida || resultado.categoria
         }
       });
-    } finally {
-      deleteFile(imagePath);
+    } catch (innerError) {
+      throw innerError;
     }
   } catch (error) {
     console.error('Erro ao processar preview:', error);
-
-    if (req.file) {
-      deleteFile(req.file.path);
-    }
 
     res.status(500).json({
       error: 'Erro ao processar imagem',
@@ -111,4 +104,3 @@ router.post('/processar-preview', upload.single('imagem'), async (req, res) => {
 });
 
 export default router;
-
