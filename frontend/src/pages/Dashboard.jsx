@@ -197,44 +197,14 @@ export default function Dashboard() {
     )
   }
 
-  // INVASIVE FIX: CSS INJETADO DIRETAMENTE PARA GARANTIR VISUAL
-  const invasiveStyles = `
-    @media (max-width: 768px) {
-      .dashboard-header-container {
-        background: transparent !important;
-        padding: 0 !important;
-        border: none !important;
-        box-shadow: none !important;
-        margin-bottom: 0.5rem !important;
-        flex-direction: row !important;
-        align-items: center !important;
-      }
-      .dashboard-header-container h2 {
-        font-size: 1.1rem !important;
-        margin: 0 !important;
-      }
-      .dashboard-subtitle, .total-guardado-subtitle {
-        display: none !important;
-      }
-      .total-guardado-card {
-        padding: 1rem !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-      }
-      .total-guardado-valor {
-        font-size: 1.5rem !important;
-      }
-      .mes-selector input {
-        width: 110px !important;
-        font-size: 0.8rem !important;
-      }
-    }
-  `;
+  // REMOVED INVASIVE STYLES - Now in Dashboard.css
+
+  const diasNoMes = new Date(parseInt(mesAno.ano), parseInt(mesAno.mes), 0).getDate()
+  const diaAtual = new Date().getDate()
+  const progressoMes = (diaAtual / diasNoMes) * 100
 
   return (
     <div className="dashboard-container">
-      <style>{invasiveStyles}</style>
 
       <div className="dashboard-header-container">
         <div>
@@ -265,16 +235,52 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Total Guardado (Patrimônio) */}
-      <div className="card total-guardado-card">
-        <div className="total-guardado-header">
-          <div className="total-guardado-icon">🏦</div>
-          <div>
-            <h3>TOTAL GUARDADO</h3>
-            <p className="total-guardado-subtitle">Soma de todos os seus bancos</p>
+      {/* Grid Superior: Total Guardado + Projeção */}
+      <div className="grid grid-2" style={{ marginBottom: '2rem' }}>
+        {/* Total Guardado (Patrimônio) */}
+        <div className="card total-guardado-card" style={{ marginBottom: 0 }}>
+          <div className="total-guardado-header">
+            <div className="total-guardado-icon">🏦</div>
+            <div>
+              <h3>Patrimônio</h3>
+              <p className="total-guardado-subtitle">Saldo acumulado</p>
+            </div>
+          </div>
+          <p className="total-guardado-valor">{formatarMoeda(totalGuardado)}</p>
+        </div>
+
+        {/* Nova Widget de Projeção */}
+        <div className="projection-widget card" style={{ marginBottom: 0 }}>
+          <div className="projection-header">
+            <div>
+              <p className="projection-title">Projeção de Gastos (Fim do Mês)</p>
+              <div className="projection-amount">{formatarMoeda(projecaoMensal)}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p className="projection-title">Gasto Atual</p>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{formatarMoeda(resumo.despesas)}</div>
+            </div>
+          </div>
+
+          <div className="projection-bar-container">
+            {/* Barra de Progresso do Mês (Cinza Escuro/Marcador) */}
+            <div
+              className="projection-marker"
+              style={{ left: `${progressoMes}%` }}
+              title={`Hoje: Dia ${diaAtual}`}
+            />
+            {/* Barra de Gastos vs Receita */}
+            <div
+              className={`projection-bar-fill ${Number(percentualGasto) < progressoMes ? 'safe' : Number(percentualGasto) < 85 ? 'warning' : 'danger'}`}
+              style={{ width: `${Math.min(Number(percentualGasto), 100)}%` }}
+            />
+          </div>
+
+          <div className="projection-details">
+            <span>{diaAtual} de {diasNoMes} dias ({Math.round(progressoMes)}%)</span>
+            <span>{percentualGasto}% da Receita gasta</span>
           </div>
         </div>
-        <p className="total-guardado-valor">{formatarMoeda(totalGuardado)}</p>
       </div>
 
       {/* NOVOS GRÁFICOS VISUAIS */}
@@ -301,7 +307,7 @@ export default function Dashboard() {
             <h3>Despesas</h3>
             <p className="resumo-valor">{formatarMoeda(resumo.despesas)}</p>
             <p className="resumo-subtitle">
-              {percentualGasto}% do total
+              Média diária: {formatarMoeda(resumo.despesas / Math.max(1, new Date().getDate()))}
             </p>
           </div>
         </div>
@@ -318,29 +324,28 @@ export default function Dashboard() {
         </div>
       </div>
 
+
       <div className="grid grid-2">
+        {/* Stats Card Simplified */}
         <div className="card stats-card">
-          <h3>📊 Estatísticas do Mês</h3>
+          <h3>📊 Análise Rápida</h3>
           <div className="stats-grid">
-            <div className="stat-box">
-              <span className="stat-label">Projeção Mensal</span>
-              <span className="stat-value-large">{formatarMoeda(projecaoMensal)}</span>
-            </div>
             <div className="stat-box">
               <span className="stat-label">Economia Prevista</span>
               <span className={`stat-value-large ${economia >= 0 ? 'positive' : 'negative'}`}>
                 {formatarMoeda(resumo.receitas - projecaoMensal)}
               </span>
             </div>
-            <div className="stat-box">
-              <span className="stat-label">% Gasto</span>
-              <span className={`stat-value-large ${Number(percentualGasto) > 80 ? 'negative' : Number(percentualGasto) > 60 ? 'warning' : 'positive'}`}>
-                {percentualGasto}%
-              </span>
-            </div>
+
             <div className="stat-box">
               <span className="stat-label">Transações</span>
               <span className="stat-value-large">{transacoes.length}</span>
+            </div>
+            <div className="stat-box">
+              <span className="stat-label">Status</span>
+              <span style={{ fontSize: '1rem', fontWeight: 600, color: Number(percentualGasto) > 100 ? 'red' : 'green' }}>
+                {Number(percentualGasto) > 100 ? 'Orçamento Estourado' : 'Dentro do Orçamento'}
+              </span>
             </div>
           </div>
         </div>

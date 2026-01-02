@@ -161,7 +161,7 @@ export default function GastosRecorrentes() {
       <div className="page-header">
         <div>
           <h2>🔄 Gastos Recorrentes</h2>
-          <p className="page-subtitle">Gerencie suas despesas que se repetem mensalmente</p>
+          <p className="page-subtitle">Gerencie suas despesas fixas</p>
         </div>
         <button
           onClick={() => {
@@ -171,8 +171,26 @@ export default function GastosRecorrentes() {
           }}
           className="btn-primary"
         >
-          + Novo Gasto Recorrente
+          + Novo Gasto
         </button>
+      </div>
+
+      {/* Summary Card */}
+      <div className="card summary-card" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ opacity: 0.8, fontSize: '0.875rem', marginBottom: '4px' }}>TOTAL MENSAL ESTIMADO</p>
+            <h3 style={{ fontSize: '2rem', margin: 0 }}>
+              {formatarMoeda(gastos.filter(g => g.ativo).reduce((acc, curr) => acc + Number(curr.valor), 0))}
+            </h3>
+          </div>
+          <div style={{ fontSize: '2.5rem', opacity: 0.2 }}>
+            📅
+          </div>
+        </div>
+        <p style={{ margin: '12px 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>
+          {gastos.filter(g => g.ativo).length} gastos ativos
+        </p>
       </div>
 
       <div className="card">
@@ -360,8 +378,8 @@ export default function GastosRecorrentes() {
                 <select
                   value={formData.banco_id}
                   onChange={(e) => {
-                    setFormData({ 
-                      ...formData, 
+                    setFormData({
+                      ...formData,
                       banco_id: e.target.value,
                       cartao_id: '' // Limpar cartão quando mudar banco
                     })

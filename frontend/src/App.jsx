@@ -14,6 +14,7 @@ import Metas from './pages/Metas'
 import Bancos from './pages/Bancos'
 import GastosRecorrentes from './pages/GastosRecorrentes'
 import Investimentos from './pages/Investimentos'
+import Cartoes from './pages/Cartoes'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="metas" element={<Metas />} />
         <Route path="bancos" element={<Bancos />} />
         <Route path="gastos-recorrentes" element={<GastosRecorrentes />} />
+        <Route path="cartoes" element={<Cartoes />} />
         <Route path="investimentos" element={<Investimentos />} />
       </Route>
     </Routes>

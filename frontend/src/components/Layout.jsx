@@ -80,6 +80,13 @@ export default function Layout() {
               🏦 Bancos
             </Link>
             <Link
+              to="/cartoes"
+              className={isActive('/cartoes') ? 'nav-link active' : 'nav-link'}
+              onClick={closeMenu}
+            >
+              💳 Cartões
+            </Link>
+            <Link
               to="/gastos-recorrentes"
               className={isActive('/gastos-recorrentes') ? 'nav-link active' : 'nav-link'}
               onClick={closeMenu}
