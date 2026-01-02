@@ -11,7 +11,46 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Todas as rotas requerem autenticação
+// Rota de Debug Aberta (sem auth para facilitar teste no browser)
+router.get('/debug-gemini', async (req, res) => {
+  try {
+    const key = process.env.GEMINI_API_KEY;
+    const keyStatus = key ? `Configurada (${key.substring(0, 4)}...${key.slice(-4)})` : 'AUSENTE';
+
+    // Teste de conexão simples
+    let modelStatus = 'Não testado';
+    let availableModels = [];
+
+    if (key) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        const data = await response.json();
+        if (data.models) {
+          availableModels = data.models.map(m => m.name);
+          modelStatus = 'OK - Conexão estabelecida';
+        } else {
+          modelStatus = 'Erro - Resposta inesperada da API: ' + JSON.stringify(data);
+        }
+      } catch (fetchError) {
+        modelStatus = 'Erro de conexão: ' + fetchError.message;
+      }
+    }
+
+    res.json({
+      status: 'Debug Report',
+      gemini_key: keyStatus,
+      connection_test: modelStatus,
+      models_found: availableModels.length,
+      model_list: availableModels,
+      server_time: new Date().toISOString()
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
+// Todas as rotas (abaixo) requerem autenticação
 router.use(authenticateToken);
 
 // Rota principal de processamento
