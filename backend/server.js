@@ -13,6 +13,7 @@ import metasRoutes from './routes/metas.js';
 import bancosRoutes from './routes/bancos.js';
 import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
 import investimentosRoutes from './routes/investimentos.js';
+import setupRoutes from './routes/setup.js';
 // Retomando rotas após correção do Lazy Load no Gemini
 
 
