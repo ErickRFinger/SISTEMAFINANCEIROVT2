@@ -88,33 +88,38 @@ export default function Perfil() {
         </div>
       )}
 
-      {/* Header com Avatar */}
-      <div className="perfil-header-section">
-        <div className="perfil-header-bg"></div>
+      {/* HERO SECTION */}
+      <div className="perfil-hero">
+        <div className="perfil-cover"></div>
         <div className="perfil-avatar-wrapper">
           <div className="perfil-avatar">
             {perfil.nome ? perfil.nome.charAt(0).toUpperCase() : '👤'}
           </div>
         </div>
-        <div className="perfil-info">
-          <h2 className="perfil-name">{perfil.nome || 'Usuário'}</h2>
-          <p className="perfil-email">{perfil.email || user?.email}</p>
+
+        <div className="perfil-header-info">
+          <div>
+            <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.25rem' }}>{perfil.nome || 'Usuário'}</h1>
+            <p style={{ color: 'var(--text-muted)' }}>{perfil.email || user?.email}</p>
+          </div>
+          <div className="perfil-badges">
+            <span className="badge pro">✨ Premium</span>
+            <span className="badge member">📅 Membro desde 2024</span>
+          </div>
         </div>
       </div>
 
-      <div className="config-grid">
-        {/* Ganho Fixo */}
-        <div className="config-card">
-          <div className="config-header">
-            <div className="config-icon">💰</div>
-            <div>
-              <h3>Renda Mensal Fixa</h3>
-              <p className="form-hint" style={{ margin: 0 }}>Base para cálculos de orçamento</p>
-            </div>
-          </div>
+      {/* SETTINGS GRID */}
+      <div className="settings-grid">
+
+        {/* CARD RENDA */}
+        <div className="settings-card">
+          <div className="card-icon-header">💰</div>
+          <h3>Renda Fixa Mensal</h3>
+          <p>Defina sua renda base para que o sistema calcule seu saldo disponível automaticamente.</p>
 
           <form onSubmit={handleGanhoFixo}>
-            <div className="form-group">
+            <div className="form-floating">
               <label htmlFor="ganho_fixo">Valor Mensal (R$)</label>
               <input
                 type="number"
@@ -125,110 +130,87 @@ export default function Perfil() {
                 onChange={(e) => setPerfil({ ...perfil, ganho_fixo_mensal: parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
               />
-              {perfil.ganho_fixo_mensal > 0 && (
-                <p className="form-hint" style={{ color: 'var(--success)', fontWeight: '500' }}>
-                  Ativo: {formatarMoeda(perfil.ganho_fixo_mensal)}
-                </p>
-              )}
             </div>
-            <button type="submit" className="btn-save" disabled={saving}>
-              {saving ? 'Salvando...' : 'Atualizar Renda'}
+            {perfil.ganho_fixo_mensal > 0 && (
+              <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: '#34d399' }}>
+                ✅ Renda ativa: {formatarMoeda(perfil.ganho_fixo_mensal)}
+              </div>
+            )}
+            <button type="submit" className="btn-primary full-width" disabled={saving}>
+              {saving ? 'Atualizando...' : 'Confirmar Renda'}
             </button>
           </form>
         </div>
 
-        {/* Dados Pessoais */}
-        <div className="config-card">
-          <div className="config-header">
-            <div className="config-icon">👤</div>
-            <div>
-              <h3>Dados da Conta</h3>
-              <p className="form-hint" style={{ margin: 0 }}>Identificação no sistema</p>
-            </div>
-          </div>
+        {/* CARD CONTA */}
+        <div className="settings-card">
+          <div className="card-icon-header">⚙️</div>
+          <h3>Dados da Conta</h3>
+          <p>Gerencie como você é identificado dentro da plataforma.</p>
 
           <form onSubmit={handleNome}>
-            <div className="form-group">
+            <div className="form-floating">
               <label htmlFor="nome">Nome de Exibição</label>
               <input
                 type="text"
                 id="nome"
                 value={perfil.nome || ''}
                 onChange={(e) => setPerfil({ ...perfil, nome: e.target.value })}
-                placeholder="Como você quer ser chamado?"
+                placeholder="Seu nome"
                 required
-                minLength={2}
               />
             </div>
-            <div className="form-group" style={{ marginTop: '1rem' }}>
-              <label htmlFor="email">Email de Acesso</label>
+            <div className="form-floating">
+              <label>Email (Não editável)</label>
               <input
                 type="email"
-                id="email"
                 value={perfil.email || user?.email || ''}
                 disabled
-                className="input-disabled"
+                style={{ opacity: 0.5, cursor: 'not-allowed' }}
               />
             </div>
-            <button type="submit" className="btn-save" disabled={saving}>
+            <button type="submit" className="btn-secondary full-width" disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </form>
         </div>
+
       </div>
 
-      {/* Suporte */}
-      <div className="card support-card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-        <div className="config-header">
-          <div className="config-icon">🤝</div>
-          <div>
-            <h3>Precisa de Ajuda?</h3>
-            <p className="form-hint" style={{ margin: 0 }}>Entre em contato direto com nosso suporte</p>
+      {/* SUPPORT & TIPS */}
+      <div className="settings-grid">
+        <div className="support-section">
+          <h3>Precisa de Ajuda?</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Fale diretamente com nosso time de suporte.</p>
+
+          <div className="support-buttons">
+            <a href="https://instagram.com/visualtechgba" target="_blank" className="support-btn">
+              <div className="brand-icon insta">📸</div>
+              <div>
+                <strong>Instagram</strong>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>@visualtechgba</div>
+              </div>
+            </a>
+            <a href="https://wa.me/49920014159" target="_blank" className="support-btn">
+              <div className="brand-icon whats">💬</div>
+              <div>
+                <strong>WhatsApp</strong>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Suporte Rápido</div>
+              </div>
+            </a>
           </div>
         </div>
 
-        <div className="support-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
-          <a
-            href="https://instagram.com/visualtechgba"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary support-btn"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', gap: '0.5rem', height: 'auto', border: '1px solid rgba(225, 48, 108, 0.3)', background: 'rgba(225, 48, 108, 0.05)' }}
-          >
-            <span style={{ fontSize: '2rem' }}>📸</span>
-            <span style={{ fontWeight: '600', color: '#E1306C' }}>Instagram</span>
-            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>@visualtechgba</span>
-          </a>
-
-          <a
-            href="https://wa.me/49920014159"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary support-btn"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', gap: '0.5rem', height: 'auto', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'rgba(37, 211, 102, 0.05)' }}
-          >
-            <span style={{ fontSize: '2rem' }}>💬</span>
-            <span style={{ fontWeight: '600', color: '#25D366' }}>WhatsApp</span>
-            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Suporte Rápido</span>
-          </a>
+        <div className="settings-card" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)' }}>
+          <h3>💡 Dicas do Sistema</h3>
+          <ul style={{ marginTop: '1rem', paddingLeft: '1.2rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+            <li style={{ marginBottom: '0.5rem' }}>Mantenha sua <strong>Renda Fixa</strong> atualizada para previsões corretas.</li>
+            <li style={{ marginBottom: '0.5rem' }}>Use o modo <strong>Privacidade</strong> (olho no painel) ao usar em público.</li>
+            <li>Confira a aba <strong>Metas</strong> para gamificar suas economias.</li>
+          </ul>
         </div>
       </div>
 
-      {/* Dicas */}
-      <div className="card tips-card">
-        <h3>💡 Dicas do Sistema</h3>
-        <ul className="tips-list">
-          <li>
-            <strong>Ganho Fixo:</strong> Definir sua renda mensal ajuda o sistema a calcular quanto sobra do seu dinheiro.
-          </li>
-          <li>
-            <strong>Metas:</strong> Use o menu "Metas" para definir objetivos de economia (Carro, Casa, Viagem).
-          </li>
-          <li>
-            <strong>Segurança:</strong> Nunca compartilhe sua senha. O suporte nunca pedirá sua senha.
-          </li>
-        </ul>
-      </div>
     </div>
   )
 }

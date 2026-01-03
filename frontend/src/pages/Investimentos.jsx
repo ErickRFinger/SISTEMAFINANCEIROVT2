@@ -46,6 +46,56 @@ export default function Investimentos() {
         }
     }
 
+    const carregarInvestimentos = async () => {
+        setLoading(true)
+        try {
+            const res = await api.get('/investimentos')
+            const lista = res.data || []
+            setInvestimentos(lista)
+            calcularTotais(lista)
+        } catch (error) {
+            console.error('Erro ao carregar:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const calcularTotais = (lista) => {
+        const investido = lista.reduce((acc, curr) => acc + Number(curr.valor_investido || 0), 0)
+        const atual = lista.reduce((acc, curr) => acc + Number(curr.valor_atual || 0), 0)
+        const rendimento = atual - investido
+        const percentual = investido > 0 ? (rendimento / investido) * 100 : 0
+
+        setStats({ investido, atual, rendimento, percentual })
+    }
+
+    // Calcula dados para o Gráfico de Rosca
+    const chartData = useMemo(() => {
+        const agrp = {}
+        let total = 0
+        investimentos.forEach(inv => {
+            const val = Number(inv.valor_atual || 0)
+            if (val > 0) {
+                agrp[inv.tipo] = (agrp[inv.tipo] || 0) + val
+                total += val
+            }
+        })
+
+        let accumPercent = 0
+        return Object.entries(agrp).map(([tipo, valor]) => {
+            const percent = (valor / total) * 100
+            const start = accumPercent
+            accumPercent += percent
+            return {
+                tipo,
+                percent,
+                start,
+                color: tiposInvestimento[tipo]?.color || '#ccc',
+                label: tiposInvestimento[tipo]?.label
+            }
+        }).sort((a, b) => b.percent - a.percent)
+    }, [investimentos])
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         const parseValue = (val) => {
