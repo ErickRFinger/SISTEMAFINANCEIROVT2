@@ -193,4 +193,10 @@ input:checked+.slider:before {
   .burn-value {
     font-size: 2.2rem;
   }
+
+  .burn-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem;
+  }
 }

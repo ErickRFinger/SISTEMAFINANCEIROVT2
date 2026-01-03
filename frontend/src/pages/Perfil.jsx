@@ -104,7 +104,7 @@ export default function Perfil() {
           </div>
           <div className="perfil-badges">
             <span className="badge pro">✨ Premium</span>
-            <span className="badge member">📅 Membro desde 2024</span>
+            <span className="badge member">📅 Membro desde 2026</span>
           </div>
         </div>
       </div>

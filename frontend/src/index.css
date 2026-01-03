@@ -329,4 +329,11 @@ textarea:focus {
   .btn-primary:hover {
     transform: none;
   }
+
+  /* Force 1 column for all grids on mobile */
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
 }

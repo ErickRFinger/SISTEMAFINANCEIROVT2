@@ -102,7 +102,22 @@
 
 @media (max-width: 768px) {
     .calendar-day {
-        min-height: 70px;
-        /* Smaller on mobile */
+        min-height: 60px;
+        padding: 2px;
+    }
+
+    .day-number {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+    }
+
+    .calendar-header-day {
+        font-size: 0.7rem;
+        padding: 2px;
+    }
+
+    .indicator {
+        width: 4px;
+        height: 4px;
     }
 }
