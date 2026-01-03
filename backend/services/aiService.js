@@ -59,32 +59,49 @@ export async function generateFinancialAdvice(userId, userMessage) {
             5. Mantenha a resposta curta (máximo 3 parágrafos).
         `;
 
-        // 3. Call Gemini (Updated to gemini-1.5-flash        // 3. Call Gemini with Fallback Strategy (Self-Healing)
-        const modelsToTry = ["gemini-1.5-flash", "gemini-pro", "gemini-1.0-pro"];
-        let responseText = null;
-        let lastError = null;
+        // 3. TENTATIVA HÍBRIDA (SDK -> depois HTTP RAW)
+        // Isso garante que se a biblioteca falhar (erro 404/versão), o fetch nativo resolve.
 
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`🤖 Tentando modelo: ${modelName}...`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(context);
-                const response = await result.response;
-                responseText = response.text();
+        try {
+            console.log('🤖 Tentando via SDK (gemini-1.5-flash)...');
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent(context);
+            const response = await result.response;
+            return response.text();
 
-                if (responseText) break; // Sucesso!
-            } catch (e) {
-                console.warn(`⚠️ Falha no modelo ${modelName}:`, e.message);
-                lastError = e;
-                continue; // Tenta o próximo
+        } catch (sdkError) {
+            console.warn('⚠️ SDK falhou, tentando conexão direta HTTP (Raw Fetch)...', sdkError.message);
+
+            // PLANO B: Conexão Direta (Sem biblioteca)
+            // Isso ignora problemas de versão do pacote npm
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: context }]
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(`Erro API HTTP: ${response.status} - ${JSON.stringify(errData)}`);
+            }
+
+            const data = await response.json();
+
+            // Extrair resposta do JSON bruto do Google
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Resposta da API vazia ou inválida.");
             }
         }
-
-        if (!responseText) {
-            throw lastError || new Error("Nenhum modelo de IA respondeu.");
-        }
-
-        return responseText;
 
     } catch (error) {
         console.error('❌ ERRO CRÍTICO NA IA:', error);
