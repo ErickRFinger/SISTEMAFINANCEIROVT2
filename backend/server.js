@@ -90,22 +90,20 @@ app.use('/api/investimentos', investimentosRoutes);
 app.use('/api/cartoes', cartoesRoutes);
 app.use('/api/setup', setupRoutes);
 
-// import { generateFinancialAdvice } from './services/aiService.js';
-// import authMiddleware from './middleware/auth.js';
+import { generateFinancialAdvice } from './services/aiService.js';
+import authMiddleware from './middleware/auth.js';
 
-// // Rota de Chat V5.0 (Desativada para estabilidade)
-// /*
-// app.post('/api/chat', authMiddleware, async (req, res) => {
-//   try {
-//     const { message } = req.body;
-//     const response = await generateFinancialAdvice(req.user.id, message);
-//     res.json({ reply: response });
-//   } catch (error) {
-//     console.error('Chat Error:', error);
-//     res.status(500).json({ error: 'Erro ao processar mensagem' });
-//   }
-// });
-// */
+// Rota de Chat V5.0
+app.post('/api/chat', authMiddleware, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const response = await generateFinancialAdvice(req.user.id, message);
+    res.json({ reply: response });
+  } catch (error) {
+    console.error('Chat Error:', error);
+    res.status(500).json({ error: 'Erro ao processar mensagem' });
+  }
+});
 
 // Tratamento de erros
 app.use((err, req, res, next) => {
