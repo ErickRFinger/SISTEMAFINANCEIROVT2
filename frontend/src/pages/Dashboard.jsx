@@ -16,13 +16,29 @@ export default function Dashboard() {
   const [perfil, setPerfil] = useState({ ganho_fixo_mensal: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Privacy Mode State (Persisted in localStorage)
+  const [privacyMode, setPrivacyMode] = useState(() => {
+    return localStorage.getItem('privacyMode') === 'true'
+  })
+
   const hoje = new Date()
   const [mesAno, setMesAno] = useState({
     mes: String(hoje.getMonth() + 1).padStart(2, '0'),
     ano: String(hoje.getFullYear())
   })
 
+  // Update localStorage when privacyMode changes
+  useEffect(() => {
+    localStorage.setItem('privacyMode', privacyMode)
+  }, [privacyMode])
+
+  const togglePrivacy = () => {
+    setPrivacyMode(!privacyMode)
+  }
+
   const carregarDados = useCallback(async () => {
+    // ... existing carregarDados logic ...
     try {
       setLoading(true)
       setError(null)
@@ -37,7 +53,6 @@ export default function Dashboard() {
       try {
         const resumoRes = await api.get('/transacoes/resumo/saldo', { params: mesAno })
         resumoData = resumoRes.data || {}
-        console.log('📊 Resumo recebido:', resumoData)
       } catch (error) {
         console.error('❌ Erro ao carregar resumo:', error)
         setError('Erro ao carregar resumo financeiro')
@@ -47,7 +62,6 @@ export default function Dashboard() {
       try {
         const transacoesRes = await api.get('/transacoes', { params: { ...mesAno } })
         transacoesData = Array.isArray(transacoesRes.data) ? transacoesRes.data : []
-        console.log('💳 Transações recebidas:', transacoesData.length)
       } catch (error) {
         console.error('❌ Erro ao carregar transações:', error)
         if (!error.response || error.response.status !== 401) {
@@ -59,14 +73,9 @@ export default function Dashboard() {
       try {
         const perfilRes = await api.get('/perfil')
         perfilData = perfilRes.data || { ganho_fixo_mensal: 0 }
-        console.log('👤 Perfil recebido:', perfilData)
       } catch (error) {
         console.error('❌ Erro ao carregar perfil:', error)
-        // Perfil não é crítico, continuar sem ele
-        if (error.response?.status === 401) {
-          // Token inválido - será tratado pelo interceptor
-          throw error
-        }
+        if (error.response?.status === 401) throw error
       }
 
       // Garantir que resumo sempre tenha valores numéricos
@@ -78,12 +87,6 @@ export default function Dashboard() {
 
       // Limitar transações a 10
       const transacoesLimitadas = transacoesData.slice(0, 10)
-
-      console.log('✅ Dados processados:', {
-        resumo: resumoFormatado,
-        transacoes: transacoesLimitadas.length,
-        perfil: perfilData
-      })
 
       setResumo(resumoFormatado)
       setTransacoes(transacoesLimitadas)
@@ -101,13 +104,7 @@ export default function Dashboard() {
 
     } catch (error) {
       console.error('❌ Erro crítico ao carregar dados:', error)
-
-      // Se for erro de autenticação, não mostrar erro genérico
-      if (error.response?.status === 401) {
-        console.log('🔐 Token inválido, redirecionando para login...')
-        // O interceptor já vai redirecionar
-        return
-      }
+      if (error.response?.status === 401) return
 
       const errorMessage = error.response?.data?.error || error.message || 'Erro ao carregar dados'
       setError(errorMessage)
@@ -140,6 +137,8 @@ export default function Dashboard() {
   }, [carregarDados])
 
   const formatarMoeda = (valor) => {
+    if (privacyMode) return '••••'
+
     const numValor = Number(valor) || 0
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -211,15 +210,26 @@ export default function Dashboard() {
           <h2>💰 Financeiro</h2>
           <p className="dashboard-subtitle">Visão geral das suas finanças</p>
         </div>
-        <div className="mes-selector">
-          <input
-            type="month"
-            value={`${mesAno.ano}-${mesAno.mes}`}
-            onChange={(e) => {
-              const [ano, mes] = e.target.value.split('-')
-              setMesAno({ mes, ano })
-            }}
-          />
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button
+            onClick={togglePrivacy}
+            className="btn-secondary"
+            style={{ padding: '0.5rem 0.8rem', fontSize: '1.2rem', minHeight: 'auto' }}
+            title={privacyMode ? "Mostrar valores" : "Esconder valores"}
+          >
+            {privacyMode ? '👁️' : '🔒'}
+          </button>
+
+          <div className="mes-selector">
+            <input
+              type="month"
+              value={`${mesAno.ano}-${mesAno.mes}`}
+              onChange={(e) => {
+                const [ano, mes] = e.target.value.split('-')
+                setMesAno({ mes, ano })
+              }}
+            />
+          </div>
         </div>
       </div>
 

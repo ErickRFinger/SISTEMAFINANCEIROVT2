@@ -177,6 +177,43 @@ export default function Perfil() {
         </div>
       </div>
 
+      {/* Suporte */}
+      <div className="card support-card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+        <div className="config-header">
+          <div className="config-icon">🤝</div>
+          <div>
+            <h3>Precisa de Ajuda?</h3>
+            <p className="form-hint" style={{ margin: 0 }}>Entre em contato direto com nosso suporte</p>
+          </div>
+        </div>
+
+        <div className="support-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+          <a
+            href="https://instagram.com/visualtechgba"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary support-btn"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', gap: '0.5rem', height: 'auto', border: '1px solid rgba(225, 48, 108, 0.3)', background: 'rgba(225, 48, 108, 0.05)' }}
+          >
+            <span style={{ fontSize: '2rem' }}>📸</span>
+            <span style={{ fontWeight: '600', color: '#E1306C' }}>Instagram</span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>@visualtechgba</span>
+          </a>
+
+          <a
+            href="https://wa.me/49920014159"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary support-btn"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', gap: '0.5rem', height: 'auto', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'rgba(37, 211, 102, 0.05)' }}
+          >
+            <span style={{ fontSize: '2rem' }}>💬</span>
+            <span style={{ fontWeight: '600', color: '#25D366' }}>WhatsApp</span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Suporte Rápido</span>
+          </a>
+        </div>
+      </div>
+
       {/* Dicas */}
       <div className="card tips-card">
         <h3>💡 Dicas do Sistema</h3>
