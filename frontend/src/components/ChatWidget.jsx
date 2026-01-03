@@ -1,0 +1,95 @@
+
+import { useState, useRef, useEffect } from 'react'
+import api from '../services/api'
+import './ChatWidget.css'
+import ReactMarkdown from 'react-markdown' // Assumindo que talvez não tenha, vou usar render simples se falhar ou texto puro
+
+export default function ChatWidget() {
+    const [isOpen, setIsOpen] = useState(false)
+    const [messages, setMessages] = useState([
+        { id: 1, text: "Olá! Sou o Cérebro 🧠. Pergunte sobre suas finanças!", sender: 'ai' }
+    ])
+    const [input, setInput] = useState('')
+    const [loading, setLoading] = useState(false)
+    const messagesEndRef = useRef(null)
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+
+    useEffect(() => {
+        if (isOpen) scrollToBottom()
+    }, [messages, isOpen])
+
+    const handleSend = async (e) => {
+        e.preventDefault()
+        if (!input.trim()) return
+
+        const userMsg = { id: Date.now(), text: input, sender: 'user' }
+        setMessages(prev => [...prev, userMsg])
+        setInput('')
+        setLoading(true)
+
+        try {
+            const res = await api.post('/chat', { message: userMsg.text })
+            const aiMsg = { id: Date.now() + 1, text: res.data.reply, sender: 'ai' }
+            setMessages(prev => [...prev, aiMsg])
+        } catch (error) {
+            const errorMsg = { id: Date.now() + 1, text: "Erro ao conectar com o Cérebro. Tente novamente.", sender: 'ai' }
+            setMessages(prev => [...prev, errorMsg])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <div className="chat-widget-container">
+            {isOpen && (
+                <div className="chat-window">
+                    <div className="chat-header">
+                        <div className="chat-avatar">🧠</div>
+                        <div>
+                            <h3>Cérebro IA</h3>
+                            <p>Assistente Financeiro V5.0</p>
+                        </div>
+                    </div>
+
+                    <div className="chat-messages">
+                        {messages.map(msg => (
+                            <div key={msg.id} className={`message ${msg.sender}`}>
+                                {msg.text}
+                            </div>
+                        ))}
+                        {loading && (
+                            <div className="message ai">
+                                <div className="typing-indicator">
+                                    <span className="typing-dot"></span>
+                                    <span className="typing-dot"></span>
+                                    <span className="typing-dot"></span>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <form className="chat-input-area" onSubmit={handleSend}>
+                        <input
+                            className="chat-input"
+                            placeholder="Pergunte algo..."
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            disabled={loading}
+                        />
+                        <button type="submit" className="chat-send" disabled={loading || !input.trim()}>
+                            ➤
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            <button className={`chat-fab ${isOpen ? 'open' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+                {isOpen ? '✕' : '💬'}
+            </button>
+        </div>
+    )
+}
