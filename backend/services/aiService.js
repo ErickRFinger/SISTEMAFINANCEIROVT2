@@ -5,8 +5,15 @@ import supabase from '../database/db.js';
 export async function generateFinancialAdvice(userId, userMessage) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            console.error('⚠️ GEMINI_API_KEY não configurada no backend.');
+
+        // LOG DE DEBUG (Apagar em produção)
+        console.log('🔑 Check de Chave AI:');
+        if (apiKey) {
+            console.log(`   - Status: Presente`);
+            console.log(`   - Início: ${apiKey.substring(0, 5)}...`);
+            console.log(`   - Fim: ...${apiKey.substring(apiKey.length - 4)}`);
+        } else {
+            console.error('   - Status: AUSENTE (Isso vai causar erro)');
             return "O Cérebro está desconectado (Falta configurar a Chave de API no Backend).";
         }
 
