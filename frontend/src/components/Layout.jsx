@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import BottomNavigation from './BottomNavigation'
 
+import ChatWidget from './ChatWidget'
 import './Layout.css'
 
 export default function Layout() {
@@ -139,6 +140,7 @@ export default function Layout() {
       </main>
 
       <BottomNavigation />
+      <ChatWidget />
     </div>
   )
 }
