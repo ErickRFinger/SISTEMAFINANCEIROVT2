@@ -59,18 +59,31 @@ export async function generateFinancialAdvice(userId, userMessage) {
         return response.text();
 
     } catch (error) {
-        console.error('❌ ERRO DETALHADO NA IA:', error);
+        console.error('❌ ERRO CRÍTICO NA IA:', error);
 
-        // Log environment status for debugging
-        console.log('🔍 Status do Ambiente:', {
-            hasKey: !!process.env.GEMINI_API_KEY,
-            keyLength: process.env.GEMINI_API_KEY?.length
-        });
+        // DEBUG MODE: Retornar o erro real para o usuário (temporário)
+        const debugInfo = {
+            message: error.message,
+            stack: error.stack,
+            env: {
+                hasGeminiKey: !!process.env.GEMINI_API_KEY,
+                keyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+                hasSupabase: !!process.env.SUPABASE_URL
+            }
+        };
 
-        if (error.message?.includes('API key')) {
-            return "Parece que há um problema com a Chave da API. Verifique a configuração no painel.";
-        }
+        return `
+### 🔧 Diagnóstico de Erro
+Parece que algo deu errado. Aqui estão os detalhes técnicos para me ajudar a consertar:
 
-        return "Desculpe, tive um erro técnico ao processar seu pedido. Tente novamente em alguns instantes. 🧠🔧";
+**Erro:** \`${debugInfo.message}\`
+
+**Status do Sistema:**
+- Tem Chave Gemini? ${debugInfo.env.hasGeminiKey ? '✅ Sim' : '❌ Não'}
+- Tem Banco de Dados? ${debugInfo.env.hasSupabase ? '✅ Sim' : '❌ Não'}
+
+_Por favor, copie essa mensagem e mande para o desenvolvedor._
+        `;
     }
 }
+```
