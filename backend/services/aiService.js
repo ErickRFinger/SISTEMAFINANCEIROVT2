@@ -70,16 +70,54 @@ export async function generateFinancialAdvice(userId, userMessage) {
             return response.text();
 
         } catch (sdkError) {
-            console.warn('⚠️ SDK falhou, inicializando protocolo de contingência HTTP multi-modelo...', sdkError.message);
+            console.warn('⚠️ SDK falhou. Iniciando Protocolo de Auto-Descoberta de Modelos...', sdkError.message);
 
-            // LISTA DE MODELOS PARA TENTAR (Em ordem de preferência)
-            const models = ["gemini-1.5-flash", "gemini-pro", "gemini-1.0-pro"];
+            // PASSO 1: Descobrir quais modelos essa chave PODE acessar
+            // Isso pergunta ao Google: "O que eu posso usar?" em vez de adivinhar.
+            let availableModels = [];
+            try {
+                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+                const listResp = await fetch(listUrl);
+
+                if (listResp.ok) {
+                    const listData = await listResp.json();
+                    if (listData.models) {
+                        // Filtramos apenas modelos que servem para gerar texto (generateContent)
+                        availableModels = listData.models
+                            .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
+                            .map(m => m.name); // Ex: "models/gemini-1.5-flash"
+
+                        // Ordenar para tentar os pro/flash primeiro (lógica simples)
+                        availableModels.sort((a, b) => {
+                            if (a.includes('flash')) return -1;
+                            if (b.includes('flash')) return 1;
+                            return 0;
+                        });
+
+                        console.log("✅ Modelos descobertos para esta chave:", availableModels);
+                    }
+                }
+            } catch (listErr) {
+                console.warn("⚠️ Falha ao listar modelos:", listErr.message);
+            }
+
+            // Fallback se a lista falhar: Tenta os conhecidos (com o prefixo correto)
+            if (availableModels.length === 0) {
+                availableModels = ["models/gemini-1.5-flash", "models/gemini-pro", "models/gemini-1.0-pro"];
+            }
+
+            // PASSO 2: Tentar cada modelo da lista
             let lastErrorMsg = "";
 
-            for (const model of models) {
+            for (const model of availableModels) {
                 try {
-                    console.log(`📡 Tentando conexão direta HTTP com o modelo: ${model}...`);
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                    // O modelo já vem como "models/nome-do-modelo", então a URL fica limpa:
+                    // https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
+                    // OU se a url base já tem models/, ajustamos.
+
+                    // Ajuste seguro da URL
+                    const modelId = model.startsWith('models/') ? model.split('/')[1] : model;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
                     const response = await fetch(url, {
                         method: 'POST',
@@ -88,25 +126,24 @@ export async function generateFinancialAdvice(userId, userMessage) {
                     });
 
                     if (!response.ok) {
-                        const errText = await response.text(); // Pega o erro bruto
+                        const errText = await response.text();
+                        // Se for 404, tenta o próximo. Se for outro erro, loga.
                         throw new Error(`Status ${response.status} - ${errText}`);
                     }
 
                     const data = await response.json();
 
                     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                        // SUCESSO! Retorna imediatamente
+                        // SUCESSO! 
                         return data.candidates[0].content.parts[0].text;
                     }
                 } catch (httpError) {
-                    console.warn(`❌ Falha no modelo ${model}:`, httpError.message);
                     lastErrorMsg = httpError.message;
-                    // Loop continua para o próximo modelo...
+                    // Continua tentando os outros...
                 }
             }
 
-            // Se chegou aqui, todos falharam
-            throw new Error(`Todos os modelos falharam. Último erro: ${lastErrorMsg}`);
+            throw new Error(`Falha total. Modelos tentados: ${availableModels.length}. Último erro: ${lastErrorMsg}`);
         }
 
     } catch (error) {
