@@ -38,23 +38,37 @@
   margin-top: 0.5rem;
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .transacao-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  /* Separador super sutil */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: var(--radius-md);
-  margin-bottom: 0.5rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid transparent;
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-lg);
+  margin-bottom: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideIn 0.3s ease-out forwards;
 }
 
 .transacao-row:hover {
-  background: var(--bg-card-hover);
-  transform: translateX(6px);
-  border-color: transparent;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.01);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .transacao-row:last-child {

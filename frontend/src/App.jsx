@@ -1,28 +1,38 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Dashboard from './pages/Dashboard'
-import Transacoes from './pages/Transacoes'
-import Categorias from './pages/Categorias'
-import Perfil from './pages/Perfil'
-// import LeitorNotas from './pages/LeitorNotas'
-import Metas from './pages/Metas'
-import Bancos from './pages/Bancos'
-import GastosRecorrentes from './pages/GastosRecorrentes'
-import Investimentos from './pages/Investimentos'
-import Cartoes from './pages/Cartoes'
-import Relatorios from './pages/Relatorios'
-import Layout from './components/Layout'
+import './index.css'
+
+// Lazy Load Pages
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Transacoes = lazy(() => import('./pages/Transacoes'))
+const Categorias = lazy(() => import('./pages/Categorias'))
+const Perfil = lazy(() => import('./pages/Perfil'))
+const Metas = lazy(() => import('./pages/Metas'))
+const Bancos = lazy(() => import('./pages/Bancos'))
+const GastosRecorrentes = lazy(() => import('./pages/GastosRecorrentes'))
+const Investimentos = lazy(() => import('./pages/Investimentos'))
+const Cartoes = lazy(() => import('./pages/Cartoes'))
+const Relatorios = lazy(() => import('./pages/Relatorios'))
+const Layout = lazy(() => import('./components/Layout'))
+
+// Componente de carregamento
+const Loading = () => (
+  <div className="loading-container">
+    <div className="loading-spinner"></div>
+    <p>Carregando sistema...</p>
+  </div>
+)
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
 
   if (loading) {
-    return <div className="loading">Carregando...</div>
+    return <Loading />
   }
 
   return user ? children : <Navigate to="/login" />
@@ -32,7 +42,7 @@ function PublicRoute({ children }) {
   const { user, loading } = useAuth()
 
   if (loading) {
-    return <div className="loading">Carregando...</div>
+    return <Loading />
   }
 
   return user ? <Navigate to="/dashboard" /> : children
@@ -40,35 +50,34 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-      <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
-      <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="transacoes" element={<Transacoes />} />
-        <Route path="categorias" element={<Categorias />} />
-        <Route path="perfil" element={<Perfil />} />
-        {/* <Route path="leitor" element={<LeitorNotas />} /> Route removed as requested */}
-        <Route path="metas" element={<Metas />} />
-        <Route path="bancos" element={<Bancos />} />
-        <Route path="gastos-recorrentes" element={<GastosRecorrentes />} />
-        <Route path="cartoes" element={<Cartoes />} />
-        <Route path="investimentos" element={<Investimentos />} />
-        <Route path="relatorios" element={<Relatorios />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="transacoes" element={<Transacoes />} />
+          <Route path="categorias" element={<Categorias />} />
+          <Route path="perfil" element={<Perfil />} />
+          <Route path="metas" element={<Metas />} />
+          <Route path="bancos" element={<Bancos />} />
+          <Route path="gastos-recorrentes" element={<GastosRecorrentes />} />
+          <Route path="cartoes" element={<Cartoes />} />
+          <Route path="investimentos" element={<Investimentos />} />
+          <Route path="relatorios" element={<Relatorios />} />
+        </Route>
+      </Routes>
+    </Suspense>
   )
 }
 
 function App() {
-  // PROVA DE DEPLOY V5
   React.useEffect(() => {
-    console.log('V5.0 ATIVO')
+    console.log('App V5.0 Optimized Loaded')
     document.title = "FINANCEIRO V5.0"
-    // alert("SISTEMA ATUALIZADO V5.0! \nSe você está vendo isso, o deploy funcionou.")
   }, [])
 
   return (
@@ -81,4 +90,3 @@ function App() {
 }
 
 export default App
-

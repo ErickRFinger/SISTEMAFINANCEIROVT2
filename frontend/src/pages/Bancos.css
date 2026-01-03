@@ -96,10 +96,16 @@
 
 .banco-actions {
   padding: 1rem 1.5rem;
-  display: flex;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 0.75rem;
   background: rgba(0, 0, 0, 0.2);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.banco-actions button {
+  white-space: nowrap;
+  justify-content: center;
 }
 
 /* CARTÕES LIST */
