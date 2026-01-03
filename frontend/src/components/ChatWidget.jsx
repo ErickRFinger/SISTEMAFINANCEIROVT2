@@ -1,8 +1,10 @@
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense, lazy } from 'react'
 import api from '../services/api'
 import './ChatWidget.css'
-import ReactMarkdown from 'react-markdown' // Assumindo que talvez não tenha, vou usar render simples se falhar ou texto puro
+
+// Lazy load markdown to avoid initial bundle bloat (safe pattern via Suspense fallback is not needed here if imported normally, but sticking to previous working impl - actually lets use direct import for simplicity)
+import ReactMarkdown from 'react-markdown'
 
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false)
@@ -35,7 +37,8 @@ export default function ChatWidget() {
             const aiMsg = { id: Date.now() + 1, text: res.data.reply, sender: 'ai' }
             setMessages(prev => [...prev, aiMsg])
         } catch (error) {
-            const errorMsg = { id: Date.now() + 1, text: "Erro ao conectar com o Cérebro. Tente novamente.", sender: 'ai' }
+            console.error(error)
+            const errorMsg = { id: Date.now() + 1, text: "Erro ao conectar com o Cérebro. Verifique a conexão.", sender: 'ai' }
             setMessages(prev => [...prev, errorMsg])
         } finally {
             setLoading(false)
@@ -57,7 +60,11 @@ export default function ChatWidget() {
                     <div className="chat-messages">
                         {messages.map(msg => (
                             <div key={msg.id} className={`message ${msg.sender}`}>
-                                {msg.text}
+                                {msg.sender === 'ai' ? (
+                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                ) : (
+                                    msg.text
+                                )}
                             </div>
                         ))}
                         {loading && (
