@@ -56,9 +56,6 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-        <Route path="/cartoes" element={<PrivateRoute><Cartoes /></PrivateRoute>} />
-        <Route path="/calculadora" element={<PrivateRoute><Calculadora /></PrivateRoute>} />
-        <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
@@ -73,6 +70,7 @@ function AppRoutes() {
           <Route path="cartoes" element={<Cartoes />} />
           <Route path="investimentos" element={<Investimentos />} />
           <Route path="relatorios" element={<Relatorios />} />
+          <Route path="calculadora" element={<Calculadora />} />
           <Route path="agenda" element={<Agenda />} />
         </Route>
       </Routes>
