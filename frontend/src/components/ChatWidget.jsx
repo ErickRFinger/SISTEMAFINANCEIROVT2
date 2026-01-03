@@ -42,11 +42,23 @@ export default function ChatWidget() {
             }])
         } catch (error) {
             console.error('Erro no Chat:', error)
-            const errorMsg = error.response?.data?.error || error.response?.data?.details || "Erro ao conectar com o Cérebro. Verifique a conexão."
+
+            let errorMsg = "Erro desconhecido."
+
+            if (error.response) {
+                // O servidor respondeu com um status de erro (4xx, 5xx)
+                errorMsg = error.response.data?.error || error.response.data?.details || `Erro Servidor (${error.response.status})`
+            } else if (error.request) {
+                // A requisição foi feita mas não houve resposta (Network Error)
+                errorMsg = "Sem resposta do servidor. Backend offline?"
+            } else {
+                // Erro na configuração da requisição
+                errorMsg = error.message
+            }
 
             setMessages(prev => [...prev, {
                 id: Date.now() + 1,
-                text: `⚠️ **Erro**: ${errorMsg}`,
+                text: `⚠️ **Falha**: ${errorMsg}`,
                 sender: 'ai',
                 timestamp: new Date()
             }])

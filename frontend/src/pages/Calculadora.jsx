@@ -41,6 +41,9 @@ export default function Calculadora() {
             case '÷':
                 result = curr === 0 ? 0 : prev / curr
                 break
+            case '%':
+                result = (prev * curr) / 100
+                break
             default:
                 return
         }
@@ -74,27 +77,28 @@ export default function Calculadora() {
                 </div>
 
                 <div className="calc-grid">
-                    <button className="calc-btn action span-2" onClick={clear}>AC</button>
+                    <button className="calc-btn action" onClick={clear}>AC</button>
                     <button className="calc-btn action" onClick={deleteNumber}>⌫</button>
-                    <button className="calc-btn op" onClick={() => chooseOperation('÷')}>÷</button>
+                    <button className="calc-btn op" onClick={() => chooseOperation('%')}>%</button>
+                    <button className={`calc-btn op ${operation === '÷' ? 'active' : ''}`} onClick={() => chooseOperation('÷')}>÷</button>
 
-                    <button className="calc-btn" onClick={() => appendNumber('7')}>7</button>
-                    <button className="calc-btn" onClick={() => appendNumber('8')}>8</button>
-                    <button className="calc-btn" onClick={() => appendNumber('9')}>9</button>
-                    <button className="calc-btn op" onClick={() => chooseOperation('×')}>×</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('7')}>7</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('8')}>8</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('9')}>9</button>
+                    <button className={`calc-btn op ${operation === '×' ? 'active' : ''}`} onClick={() => chooseOperation('×')}>×</button>
 
-                    <button className="calc-btn" onClick={() => appendNumber('4')}>4</button>
-                    <button className="calc-btn" onClick={() => appendNumber('5')}>5</button>
-                    <button className="calc-btn" onClick={() => appendNumber('6')}>6</button>
-                    <button className="calc-btn op" onClick={() => chooseOperation('-')}>-</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('4')}>4</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('5')}>5</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('6')}>6</button>
+                    <button className={`calc-btn op ${operation === '-' ? 'active' : ''}`} onClick={() => chooseOperation('-')}>-</button>
 
-                    <button className="calc-btn" onClick={() => appendNumber('1')}>1</button>
-                    <button className="calc-btn" onClick={() => appendNumber('2')}>2</button>
-                    <button className="calc-btn" onClick={() => appendNumber('3')}>3</button>
-                    <button className="calc-btn op" onClick={() => chooseOperation('+')}>+</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('1')}>1</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('2')}>2</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('3')}>3</button>
+                    <button className={`calc-btn op ${operation === '+' ? 'active' : ''}`} onClick={() => chooseOperation('+')}>+</button>
 
-                    <button className="calc-btn span-2" onClick={() => appendNumber('0')}>0</button>
-                    <button className="calc-btn" onClick={() => appendNumber('.')}>.</button>
+                    <button className="calc-btn num span-2" onClick={() => appendNumber('0')}>0</button>
+                    <button className="calc-btn num" onClick={() => appendNumber('.')}>.</button>
                     <button className="calc-btn equals" onClick={calculate}>=</button>
                 </div>
             </div>

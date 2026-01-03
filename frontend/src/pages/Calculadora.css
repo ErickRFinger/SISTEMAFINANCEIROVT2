@@ -1,126 +1,174 @@
-/* Calculadora.css */
+/* Calculadora.css Premium */
 .calculadora-container {
-    max-width: 400px;
-    margin: 2rem auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 140px);
+    /* Center vertically minus navs */
     padding: 1rem;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.4s ease-out;
 }
 
 .calculator-wrapper {
-    background: rgba(30, 41, 59, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 360px;
+    /* Standard mobile width */
+    background: rgba(15, 23, 42, 0.6);
+    /* Darker, more solid glass */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 32px;
+    padding: 24px;
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
+/* Screen Section */
 .calc-screen {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    background: transparent;
     text-align: right;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100px;
 }
 
 .calc-previous {
     color: var(--text-muted);
-    font-size: 0.9rem;
-    min-height: 1.2rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    min-height: 1.5rem;
+    margin-bottom: 4px;
+    font-weight: 500;
 }
 
 .calc-current {
-    color: white;
-    font-size: 2.5rem;
-    font-weight: 600;
-    word-break: break-all;
+    color: #fff;
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -1px;
 }
 
+/* Grid Layout */
 .calc-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
 }
 
+/* Button Styling - Perfect Circles/Squares */
 .calc-btn {
     aspect-ratio: 1;
     border: none;
-    border-radius: 16px;
+    border-radius: 20px;
+    /* Soft square */
     font-size: 1.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    /* Glass items */
-    color: white;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.1s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     user-select: none;
+
+    /* Neumorphic/Glass look */
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .calc-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     transform: translateY(-2px);
 }
 
 .calc-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.02);
 }
 
-.calc-btn.span-2 {
-    grid-column: span 2;
-    aspect-ratio: auto;
+/* Number Buttons */
+.calc-btn.num {
+    font-weight: 400;
 }
 
-/* Operation buttons */
+/* Operator Buttons (Right Column) */
 .calc-btn.op {
-    background: rgba(99, 102, 241, 0.2);
-    color: var(--primary);
-    font-weight: bold;
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    font-size: 1.6rem;
 }
 
 .calc-btn.op:hover {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.25);
 }
 
-/* Action buttons (AC, DEL) */
+.calc-btn.op.active {
+    background: #6366f1;
+    color: white;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+}
+
+/* Function Buttons (Top Row: AC, DEL) */
 .calc-btn.action {
-    background: rgba(239, 68, 68, 0.1);
     color: #fca5a5;
+    /* Reddish for clear */
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
-.calc-btn.action:hover {
-    background: rgba(239, 68, 68, 0.2);
+/* Zero Button (Span 2) */
+.calc-btn.span-2 {
+    grid-column: span 2;
+    aspect-ratio: auto;
+    border-radius: 20px;
+    justify-content: flex-start;
+    padding-left: 28px;
 }
 
-/* Equals button */
+/* Equals Button */
 .calc-btn.equals {
     background: var(--gradient-primary);
     color: white;
-    box-shadow: 0 4px 15px var(--primary-glow);
+    border: none;
+    box-shadow: 0 8px 20px -5px rgba(99, 102, 241, 0.5);
 }
 
 .calc-btn.equals:hover {
-    box-shadow: 0 6px 20px var(--primary-glow);
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.6);
 }
 
+/* Mobile Optimizations */
+/* Mobile Optimizations - Standard Page Feel */
 @media (max-width: 480px) {
     .calculadora-container {
-        margin: 0;
-        padding: 1rem;
-        height: calc(100vh - 80px);
-        /* Full height minus nav */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        align-items: center;
+        /* Center vertically again */
+        padding-bottom: 85px;
+        /* Space for bottom nav */
+        min-height: calc(100vh - 120px);
+    }
+
+    .calculator-wrapper {
+        border-radius: 32px;
+        /* Restore full rounded corners */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        /* Restore border */
+        max-width: 100%;
+        margin: 0 1rem;
     }
 
     .calc-btn {
-        font-size: 1.25rem;
-        border-radius: 12px;
+        border-radius: 16px;
+        font-size: 1.4rem;
     }
 }
