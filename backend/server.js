@@ -91,10 +91,10 @@ app.use('/api/cartoes', cartoesRoutes);
 app.use('/api/setup', setupRoutes);
 
 // import { generateFinancialAdvice } from './services/aiService.js'; // REMOVIDO: Import estático causava erro
-import authMiddleware from './middleware/auth.js';
+import { authenticateToken } from './middleware/auth.js';
 
 // Rota de Chat V5.0 (Com Import Dinâmico para Segurança)
-app.post('/api/chat', authMiddleware, async (req, res) => {
+app.post('/api/chat', authenticateToken, async (req, res) => {
   try {
     // Dynamic Import: Carrega o serviço de IA apenas quando a rota é chamada.
     // Isso impede que o servidor caia na inicialização se a biblioteca do Google falhar.
