@@ -32,12 +32,13 @@
 
 .perfil-avatar-wrapper {
   position: absolute;
-  bottom: -40px;
+  top: 140px;
+  /* Positions avatar relative to top, bridging cover and content */
   left: 40px;
   padding: 6px;
   background: var(--bg-body);
-  /* Matches background to create 'cutout' effect */
   border-radius: 50%;
+  z-index: 10;
 }
 
 .perfil-avatar {
@@ -226,15 +227,18 @@
 @media (max-width: 768px) {
   .perfil-header-info {
     margin-left: 0;
-    margin-top: 50px;
-    /* Space for avatar which is now below cover */
+    margin-top: 70px;
+    /* Increased to ensure text clears the avatar */
     flex-direction: column;
     align-items: center;
     text-align: center;
+    padding: 0 1rem;
   }
 
   .perfil-avatar-wrapper {
     left: 50%;
     transform: translateX(-50%);
+    top: 150px;
+    /* Slightly lower on mobile for visual balance */
   }
 }

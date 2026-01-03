@@ -25,7 +25,9 @@
     color: var(--text-secondary);
     font-size: 0.75rem;
     transition: all 0.2s ease;
-    width: 20%;
+    flex: 1;
+    min-width: 0;
+    /* Fix for flex items overflowing */
 }
 
 .nav-item.active {
@@ -39,7 +41,9 @@
 }
 
 .nav-item.active .nav-icon {
-    transform: translateY(-2px);
+    transform: translateY(-5px);
+    color: var(--primary);
+    filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.5));
 }
 
 /* Floating Action Button (Center) */
