@@ -2,10 +2,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import supabase from '../database/db.js';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 export async function generateFinancialAdvice(userId, userMessage) {
     try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error('⚠️ GEMINI_API_KEY não configurada no backend.');
+            return "O Cérebro está desconectado (Falta configurar a Chave de API).";
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+
         // 1. Fetch User Context (RAG - Retrieval Augmented Generation)
         const [
             { data: perfil },
