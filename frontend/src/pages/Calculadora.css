@@ -1,0 +1,126 @@
+/* Calculadora.css */
+.calculadora-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.calculator-wrapper {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.calc-screen {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: right;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calc-previous {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    min-height: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.calc-current {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.calc-btn {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    /* Glass items */
+    color: white;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calc-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.calc-btn:active {
+    transform: scale(0.95);
+}
+
+.calc-btn.span-2 {
+    grid-column: span 2;
+    aspect-ratio: auto;
+}
+
+/* Operation buttons */
+.calc-btn.op {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.calc-btn.op:hover {
+    background: rgba(99, 102, 241, 0.3);
+}
+
+/* Action buttons (AC, DEL) */
+.calc-btn.action {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+}
+
+.calc-btn.action:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* Equals button */
+.calc-btn.equals {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.calc-btn.equals:hover {
+    box-shadow: 0 6px 20px var(--primary-glow);
+}
+
+@media (max-width: 480px) {
+    .calculadora-container {
+        margin: 0;
+        padding: 1rem;
+        height: calc(100vh - 80px);
+        /* Full height minus nav */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .calc-btn {
+        font-size: 1.25rem;
+        border-radius: 12px;
+    }
+}

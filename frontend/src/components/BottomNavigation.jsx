@@ -34,7 +34,12 @@ export default function BottomNavigation() {
 
             <Link to="/relatorios" className={`nav-item ${isActive('/relatorios') ? 'active' : ''}`}>
                 <div className="nav-icon">📈</div>
-                <span>Relatórios</span>
+                <span>Relat..</span>
+            </Link>
+
+            <Link to="/calculadora" className={`nav-item ${isActive('/calculadora') ? 'active' : ''}`}>
+                <div className="nav-icon">🧮</div>
+                <span>Calc</span>
             </Link>
 
             <Link to="/perfil" className={`nav-item ${isActive('/perfil') ? 'active' : ''}`}>

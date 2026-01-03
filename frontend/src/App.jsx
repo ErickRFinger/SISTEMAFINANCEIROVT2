@@ -16,6 +16,7 @@ const Metas = lazy(() => import('./pages/Metas'))
 const Bancos = lazy(() => import('./pages/Bancos'))
 const GastosRecorrentes = lazy(() => import('./pages/GastosRecorrentes'))
 const Investimentos = lazy(() => import('./pages/Investimentos'))
+const Calculadora = lazy(() => import('./pages/Calculadora'))
 const Cartoes = lazy(() => import('./pages/Cartoes'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
 const Agenda = lazy(() => import('./pages/Agenda'))
@@ -55,6 +56,9 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/cartoes" element={<PrivateRoute><Cartoes /></PrivateRoute>} />
+        <Route path="/calculadora" element={<PrivateRoute><Calculadora /></PrivateRoute>} />
+        <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>

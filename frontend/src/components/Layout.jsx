@@ -111,6 +111,13 @@ export default function Layout() {
               📈 Investimentos
             </Link>
             <Link
+              to="/calculadora"
+              className={isActive('/calculadora') ? 'nav-link active' : 'nav-link'}
+              onClick={closeMenu}
+            >
+              🧮 Calculadora
+            </Link>
+            <Link
               to="/relatorios"
               className={isActive('/relatorios') ? 'nav-link active' : 'nav-link'}
               onClick={closeMenu}

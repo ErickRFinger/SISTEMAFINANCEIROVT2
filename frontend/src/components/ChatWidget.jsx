@@ -34,12 +34,22 @@ export default function ChatWidget() {
 
         try {
             const res = await api.post('/chat', { message: userMsg.text })
-            const aiMsg = { id: Date.now() + 1, text: res.data.reply, sender: 'ai' }
-            setMessages(prev => [...prev, aiMsg])
+            setMessages(prev => [...prev, {
+                id: Date.now() + 1,
+                text: res.data.reply,
+                sender: 'ai',
+                timestamp: new Date()
+            }])
         } catch (error) {
-            console.error(error)
-            const errorMsg = { id: Date.now() + 1, text: "Erro ao conectar com o Cérebro. Verifique a conexão.", sender: 'ai' }
-            setMessages(prev => [...prev, errorMsg])
+            console.error('Erro no Chat:', error)
+            const errorMsg = error.response?.data?.error || error.response?.data?.details || "Erro ao conectar com o Cérebro. Verifique a conexão."
+
+            setMessages(prev => [...prev, {
+                id: Date.now() + 1,
+                text: `⚠️ **Erro**: ${errorMsg}`,
+                sender: 'ai',
+                timestamp: new Date()
+            }])
         } finally {
             setLoading(false)
         }
