@@ -7,11 +7,11 @@ export async function generateFinancialAdvice(userId, userMessage) {
         const apiKey = process.env.GEMINI_API_KEY;
 
         // LOG DE DEBUG (Apagar em produção)
-        console.log('🔑 Check de Chave AI:');
+        // console.log('🔑 Check de Chave AI:');
         if (apiKey) {
-            console.log(`   - Status: Presente`);
-            console.log(`   - Início: ${apiKey.substring(0, 5)}...`);
-            console.log(`   - Fim: ...${apiKey.substring(apiKey.length - 4)}`);
+            // console.log(`   - Status: Presente`);
+            // console.log(`   - Início: ${apiKey.substring(0, 5)}...`);
+            // console.log(`   - Fim: ...${apiKey.substring(apiKey.length - 4)}`);
         } else {
             console.error('   - Status: AUSENTE (Isso vai causar erro)');
             return "O Cérebro está desconectado (Falta configurar a Chave de API no Backend).";
@@ -59,8 +59,8 @@ export async function generateFinancialAdvice(userId, userMessage) {
             5. Mantenha a resposta curta (máximo 3 parágrafos).
         `;
 
-        // 3. Call Gemini (Updated to Flash model for speed/efficiency)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // 3. Call Gemini (Using standard gemini-pro for stability)
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const result = await model.generateContent(context);
         const response = await result.response;
         return response.text();
