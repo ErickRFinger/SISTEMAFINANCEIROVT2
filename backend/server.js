@@ -90,18 +90,25 @@ app.use('/api/investimentos', investimentosRoutes);
 app.use('/api/cartoes', cartoesRoutes);
 app.use('/api/setup', setupRoutes);
 
-import { generateFinancialAdvice } from './services/aiService.js';
+// import { generateFinancialAdvice } from './services/aiService.js'; // REMOVIDO: Import estático causava erro
 import authMiddleware from './middleware/auth.js';
 
-// Rota de Chat V5.0
+// Rota de Chat V5.0 (Com Import Dinâmico para Segurança)
 app.post('/api/chat', authMiddleware, async (req, res) => {
   try {
+    // Dynamic Import: Carrega o serviço de IA apenas quando a rota é chamada.
+    // Isso impede que o servidor caia na inicialização se a biblioteca do Google falhar.
+    const { generateFinancialAdvice } = await import('./services/aiService.js');
+
     const { message } = req.body;
     const response = await generateFinancialAdvice(req.user.id, message);
     res.json({ reply: response });
   } catch (error) {
-    console.error('Chat Error:', error);
-    res.status(500).json({ error: 'Erro ao processar mensagem' });
+    console.error('Chat Error (Dynamic Load):', error);
+    res.status(500).json({
+      error: 'Serviço de IA indisponível no momento.',
+      details: process.env.NODE_ENV !== 'production' ? error.message : undefined
+    });
   }
 });
 
