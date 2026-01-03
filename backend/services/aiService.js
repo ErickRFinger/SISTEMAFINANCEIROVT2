@@ -70,37 +70,43 @@ export async function generateFinancialAdvice(userId, userMessage) {
             return response.text();
 
         } catch (sdkError) {
-            console.warn('⚠️ SDK falhou, tentando conexão direta HTTP (Raw Fetch)...', sdkError.message);
+            console.warn('⚠️ SDK falhou, inicializando protocolo de contingência HTTP multi-modelo...', sdkError.message);
 
-            // PLANO B: Conexão Direta (Sem biblioteca)
-            // Isso ignora problemas de versão do pacote npm
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // LISTA DE MODELOS PARA TENTAR (Em ordem de preferência)
+            const models = ["gemini-1.5-flash", "gemini-pro", "gemini-1.0-pro"];
+            let lastErrorMsg = "";
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: context }]
-                    }]
-                })
-            });
+            for (const model of models) {
+                try {
+                    console.log(`📡 Tentando conexão direta HTTP com o modelo: ${model}...`);
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(`Erro API HTTP: ${response.status} - ${JSON.stringify(errData)}`);
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
+                    });
+
+                    if (!response.ok) {
+                        const errText = await response.text(); // Pega o erro bruto
+                        throw new Error(`Status ${response.status} - ${errText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                        // SUCESSO! Retorna imediatamente
+                        return data.candidates[0].content.parts[0].text;
+                    }
+                } catch (httpError) {
+                    console.warn(`❌ Falha no modelo ${model}:`, httpError.message);
+                    lastErrorMsg = httpError.message;
+                    // Loop continua para o próximo modelo...
+                }
             }
 
-            const data = await response.json();
-
-            // Extrair resposta do JSON bruto do Google
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                return data.candidates[0].content.parts[0].text;
-            } else {
-                throw new Error("Resposta da API vazia ou inválida.");
-            }
+            // Se chegou aqui, todos falharam
+            throw new Error(`Todos os modelos falharam. Último erro: ${lastErrorMsg}`);
         }
 
     } catch (error) {
