@@ -175,22 +175,15 @@ export default function GastosRecorrentes() {
         </button>
       </div>
 
-      {/* Summary Card */}
-      <div className="card summary-card" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <p style={{ opacity: 0.8, fontSize: '0.875rem', marginBottom: '4px' }}>TOTAL MENSAL ESTIMADO</p>
-            <h3 style={{ fontSize: '2rem', margin: 0 }}>
-              {formatarMoeda(gastos.filter(g => g.ativo).reduce((acc, curr) => acc + Number(curr.valor), 0))}
-            </h3>
+      {/* BURN HEADER */}
+      <div className="burn-header">
+        <div className="burn-info">
+          <h2>Custo Fixo Mensal</h2>
+          <div className="burn-value">
+            {formatarMoeda(gastos.filter(g => g.ativo).reduce((acc, curr) => acc + Number(curr.valor), 0))}
           </div>
-          <div style={{ fontSize: '2.5rem', opacity: 0.2 }}>
-            📅
-          </div>
+          <p style={{ opacity: 0.8, marginTop: '0.5rem' }}>{gastos.filter(g => g.ativo).length} assinaturas ativas</p>
         </div>
-        <p style={{ margin: '12px 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>
-          {gastos.filter(g => g.ativo).length} gastos ativos
-        </p>
       </div>
 
       <div className="card">
@@ -210,8 +203,8 @@ export default function GastosRecorrentes() {
       {gastos.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="empty-icon">🔄</div>
-            <p>Nenhum gasto recorrente cadastrado</p>
+            <div className="empty-icon">📺</div>
+            <p>Nenhuma assinatura cadastrada</p>
             <button
               onClick={() => {
                 setEditing(null)
@@ -220,85 +213,65 @@ export default function GastosRecorrentes() {
               }}
               className="btn-primary"
             >
-              Criar Primeiro Gasto Recorrente
+              Adicionar Assinatura
             </button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-2">
-          {gastos.map((gasto) => (
-            <div key={gasto.id} className="card gasto-card">
-              <div className="gasto-header">
-                <div>
+        <div className="subs-grid">
+          {gastos.map((gasto) => {
+            // Icon Detection Logic
+            let icon = '🔄';
+            const lowerDesc = gasto.descricao.toLowerCase();
+            if (lowerDesc.includes('netflix')) icon = '🎬';
+            else if (lowerDesc.includes('spotify')) icon = '🎵';
+            else if (lowerDesc.includes('amazon')) icon = '📦';
+            else if (lowerDesc.includes('prime')) icon = '📦';
+            else if (lowerDesc.includes('internet') || lowerDesc.includes('vivo') || lowerDesc.includes('claro')) icon = '🌐';
+            else if (lowerDesc.includes('academia') || lowerDesc.includes('smart') || lowerDesc.includes('gym')) icon = '💪';
+            else if (lowerDesc.includes('aluguel') || lowerDesc.includes('condominio')) icon = '🏠';
+            else if (lowerDesc.includes('luz') || lowerDesc.includes('energia')) icon = '💡';
+            else if (lowerDesc.includes('agua')) icon = '💧';
+
+            return (
+              <div key={gasto.id} className={`sub-card ${!gasto.ativo ? 'inactive' : ''}`}>
+                <div className="sub-header">
+                  <div className="sub-icon">{icon}</div>
+                  <label className="sub-toggle">
+                    <input
+                      type="checkbox"
+                      checked={gasto.ativo}
+                      onChange={async (e) => {
+                        // Toggle logic directly here
+                        try {
+                          await api.put(`/gastos-recorrentes/${gasto.id}`, { ...gasto, ativo: e.target.checked });
+                          carregarDados(); // Reload to update totals
+                        } catch (err) { alert('Erro ao atualizar status'); }
+                      }}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="sub-info">
                   <h3>{gasto.descricao}</h3>
-                  <p className="gasto-valor">{formatarMoeda(gasto.valor)}</p>
+                  <div className="sub-cost">{formatarMoeda(gasto.valor)}</div>
+                  <div className="sub-meta">
+                    <span>🗓️ Dia {gasto.dia_vencimento}</span>
+                    <span>• {tiposRecorrencia.find(t => t.value === gasto.tipo)?.label}</span>
+                  </div>
                 </div>
-                <div className={`gasto-status ${gasto.ativo ? 'ativo' : 'inativo'}`}>
-                  {gasto.ativo ? '🟢 Ativo' : '🔴 Inativo'}
-                </div>
-              </div>
 
-              <div className="gasto-info">
-                <div className="gasto-info-item">
-                  <span className="gasto-info-label">Tipo:</span>
-                  <span>{tiposRecorrencia.find(t => t.value === gasto.tipo)?.label || gasto.tipo}</span>
+                <div className="sub-footer">
+                  <button onClick={() => handleEdit(gasto)} className="btn-icon">✏️</button>
+                  <button onClick={() => handleDelete(gasto.id)} className="btn-icon">🗑️</button>
+                  {gasto.ativo && (
+                    <button onClick={() => handleGerarTransacao(gasto)} className="btn-icon" title="Gerar Fatura">💳</button>
+                  )}
                 </div>
-                <div className="gasto-info-item">
-                  <span className="gasto-info-label">Vencimento:</span>
-                  <span>Dia {gasto.dia_vencimento}</span>
-                </div>
-                {gasto.categoria_nome && (
-                  <div className="gasto-info-item">
-                    <span className="gasto-info-label">Categoria:</span>
-                    <span style={{ color: gasto.categoria_cor || '#6366f1' }}>
-                      {gasto.categoria_nome}
-                    </span>
-                  </div>
-                )}
-                {gasto.banco_nome && (
-                  <div className="gasto-info-item">
-                    <span className="gasto-info-label">Banco:</span>
-                    <span>{gasto.banco_nome}</span>
-                  </div>
-                )}
-                {gasto.cartao_nome && (
-                  <div className="gasto-info-item">
-                    <span className="gasto-info-label">Cartão:</span>
-                    <span>{gasto.cartao_nome}</span>
-                  </div>
-                )}
-                {gasto.observacoes && (
-                  <div className="gasto-info-item">
-                    <span className="gasto-info-label">Observações:</span>
-                    <span>{gasto.observacoes}</span>
-                  </div>
-                )}
               </div>
-
-              <div className="gasto-actions">
-                {gasto.ativo && (
-                  <button
-                    onClick={() => handleGerarTransacao(gasto)}
-                    className="btn-success btn-sm"
-                  >
-                    💳 Gerar Transação
-                  </button>
-                )}
-                <button
-                  onClick={() => handleEdit(gasto)}
-                  className="btn-secondary btn-sm"
-                >
-                  ✏️ Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(gasto.id)}
-                  className="btn-danger btn-sm"
-                >
-                  🗑️ Deletar
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

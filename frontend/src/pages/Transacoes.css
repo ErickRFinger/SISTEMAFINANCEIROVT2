@@ -159,3 +159,57 @@
 .search-input:focus {
   box-shadow: none;
 }
+
+/* MOBILE OPTIMIZATIONS (Compact Horizontal Layout) */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  /* Force horizontal row even on mobile */
+  .t-card {
+    padding: 1rem;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .t-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.25rem;
+    margin-right: 0;
+  }
+
+  .t-info {
+    flex: 1;
+    min-width: 0;
+    /* Enables truncation */
+  }
+
+  .t-desc {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .t-meta {
+    font-size: 0.75rem;
+  }
+
+  .t-amount {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  /* Hide direct actions on mobile, use Modal */
+  .t-actions {
+    display: none;
+  }
+
+  .search-bar-container {
+    padding: 0.5rem 1rem;
+  }
+}

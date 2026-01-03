@@ -374,9 +374,24 @@ export default function Transacoes() {
                 <label>Data</label>
                 <input type="date" required value={formData.data} onChange={(e) => setFormData({ ...formData, data: e.target.value })} />
               </div>
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">Cancelar</button>
-                <button type="submit" className="btn-primary">Salvar</button>
+              <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
+                {editing && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      handleDelete(editing.id);
+                    }}
+                    className="btn-danger btn-sm"
+                    style={{ marginRight: 'auto' }}
+                  >
+                    🗑️ Excluir
+                  </button>
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem', marginLeft: editing ? '0' : 'auto' }}>
+                  <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">Cancelar</button>
+                  <button type="submit" className="btn-primary">Salvar</button>
+                </div>
               </div>
             </form>
           </div>

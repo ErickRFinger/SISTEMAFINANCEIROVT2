@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import api from '../services/api'
 import { format } from 'date-fns'
 import FinancialCharts from '../components/FinancialCharts'
+import SmartInsights from '../components/SmartInsights'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -12,6 +13,7 @@ export default function Dashboard() {
     saldo: 0
   })
   const [transacoes, setTransacoes] = useState([])
+  const [metas, setMetas] = useState([])
   const [totalGuardado, setTotalGuardado] = useState(0)
   const [perfil, setPerfil] = useState({ ganho_fixo_mensal: 0 })
   const [loading, setLoading] = useState(true)
@@ -57,6 +59,12 @@ export default function Dashboard() {
         console.error('❌ Erro ao carregar resumo:', error)
         setError('Erro ao carregar resumo financeiro')
       }
+
+      // Carregar Metas (para Insights)
+      try {
+        const metasRes = await api.get('/metas')
+        setMetas(metasRes.data || [])
+      } catch (error) { console.error('Erro metas', error) }
 
       // Carregar transações
       try {
@@ -244,6 +252,9 @@ export default function Dashboard() {
           </button>
         </div>
       )}
+
+      {/* SMART INSIGHTS WIDGET */}
+      <SmartInsights transacoes={transacoes} resumo={resumo} metas={metas} />
 
       {/* Grid Superior: Total Guardado + Projeção */}
       <div className="grid grid-2" style={{ marginBottom: '2rem' }}>

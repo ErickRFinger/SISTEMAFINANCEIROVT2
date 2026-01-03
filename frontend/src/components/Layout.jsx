@@ -58,6 +58,13 @@ export default function Layout() {
             >
               💰 Transações
             </Link>
+            <Link
+              to="/agenda"
+              className={isActive('/agenda') ? 'nav-link active' : 'nav-link'}
+              onClick={closeMenu}
+            >
+              📅 Agenda
+            </Link>
 
             <Link
               to="/categorias"

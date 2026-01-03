@@ -28,59 +28,23 @@ export default function Investimentos() {
         outros: { label: 'Outros', color: '#6b7280', icon: '💎' }
     }
 
+    const [bancos, setBancos] = useState([])
+    const [debitarSaldo, setDebitarSaldo] = useState(false)
+    const [bancoSelecionado, setBancoSelecionado] = useState('')
+
     useEffect(() => {
         carregarInvestimentos()
+        carregarBancos()
     }, [])
 
-    const carregarInvestimentos = async () => {
-        setLoading(true)
+    const carregarBancos = async () => {
         try {
-            const res = await api.get('/investimentos')
-            const lista = res.data || []
-            setInvestimentos(lista)
-            calcularTotais(lista)
+            const res = await api.get('/bancos')
+            setBancos(res.data)
         } catch (error) {
-            console.error('Erro ao carregar:', error)
-        } finally {
-            setLoading(false)
+            console.error('Erro ao carregar bancos:', error)
         }
     }
-
-    const calcularTotais = (lista) => {
-        const investido = lista.reduce((acc, curr) => acc + Number(curr.valor_investido || 0), 0)
-        const atual = lista.reduce((acc, curr) => acc + Number(curr.valor_atual || 0), 0)
-        const rendimento = atual - investido
-        const percentual = investido > 0 ? (rendimento / investido) * 100 : 0
-
-        setStats({ investido, atual, rendimento, percentual })
-    }
-
-    // Calcula dados para o Gráfico de Rosca
-    const chartData = useMemo(() => {
-        const agrp = {}
-        let total = 0
-        investimentos.forEach(inv => {
-            const val = Number(inv.valor_atual || 0)
-            if (val > 0) {
-                agrp[inv.tipo] = (agrp[inv.tipo] || 0) + val
-                total += val
-            }
-        })
-
-        let accumPercent = 0
-        return Object.entries(agrp).map(([tipo, valor]) => {
-            const percent = (valor / total) * 100
-            const start = accumPercent
-            accumPercent += percent
-            return {
-                tipo,
-                percent,
-                start,
-                color: tiposInvestimento[tipo]?.color || '#ccc',
-                label: tiposInvestimento[tipo]?.label
-            }
-        }).sort((a, b) => b.percent - a.percent)
-    }, [investimentos])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -92,6 +56,12 @@ export default function Investimentos() {
         const valInvestido = parseValue(form.valor_investido)
         const valAtual = form.valor_atual ? parseValue(form.valor_atual) : valInvestido
 
+        // Validação da Integração
+        if (debitarSaldo && !bancoSelecionado) {
+            alert('Selecione um banco para debitar o valor.')
+            return
+        }
+
         const payload = {
             ...form,
             valor_investido: valInvestido,
@@ -100,14 +70,32 @@ export default function Investimentos() {
 
         try {
             setLoading(true)
+
+            // 1. Criar Transação de Despesa (Se marcado)
+            if (debitarSaldo && bancoSelecionado) {
+                await api.post('/transacoes', {
+                    descricao: `Investimento: ${form.nome}`,
+                    valor: valInvestido,
+                    tipo: 'despesa',
+                    data: form.data_aplicacao,
+                    banco_id: bancoSelecionado,
+                    categoria_id: null, // Poderia ser uma categoria 'Investimentos' se existir
+                    observacoes: 'Gerado automaticamente pelo módulo de Investimentos'
+                })
+            }
+
+            // 2. Criar Investimento
             await api.post('/investimentos', payload)
-            alert('Investimento salvo!')
+
+            alert('Investimento salvo' + (debitarSaldo ? ' e debitado da conta!' : '!'))
             setShowForm(false)
             setForm({
                 nome: '', tipo: 'renda_fixa', instituicao: '',
                 valor_investido: '', valor_atual: '',
                 data_aplicacao: new Date().toISOString().split('T')[0], observacoes: ''
             })
+            setDebitarSaldo(false)
+            setBancoSelecionado('')
             carregarInvestimentos()
         } catch (error) {
             console.error(error)
@@ -266,6 +254,39 @@ export default function Investimentos() {
                             Data Aplicação
                             <input type="date" value={form.data_aplicacao} onChange={e => setForm({ ...form, data_aplicacao: e.target.value })} />
                         </label>
+                    </div>
+
+                    {/* INTEGRAÇÃO INTELIGENTE LINK */}
+                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: debitarSaldo ? '1rem' : 0 }}>
+                            <input
+                                type="checkbox"
+                                checked={debitarSaldo}
+                                onChange={e => setDebitarSaldo(e.target.checked)}
+                            />
+                            <strong>⚡ Debitar automaticamente do meu Banco?</strong>
+                        </label>
+
+                        {debitarSaldo && (
+                            <div className="fade-in">
+                                <label>
+                                    Selecionar Banco/Carteira de origem
+                                    <select
+                                        value={bancoSelecionado}
+                                        onChange={e => setBancoSelecionado(e.target.value)}
+                                        style={{ marginTop: '0.5rem' }}
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {bancos.map(b => (
+                                            <option key={b.id} value={b.id}>{b.nome} (Saldo: {formatar(b.saldo_atual)})</option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <p style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '0.5rem' }}>
+                                    ℹ️ O sistema criará uma despesa automaticamente neste banco para manter seu saldo atualizado.
+                                </p>
+                            </div>
+                        )}
                     </div>
                     <button className="btn-success full-width mt-4" disabled={loading}>
                         {loading ? 'Salvando...' : 'Confirmar Aporte'}

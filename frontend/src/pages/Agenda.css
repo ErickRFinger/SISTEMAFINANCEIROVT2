@@ -1,0 +1,108 @@
+/* Agenda.css - Premium Calendar */
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.calendar-header-day {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.calendar-day {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    min-height: 100px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-day:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-day.today {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.day-number {
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.day-indicators {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.indicator.expense {
+    background-color: var(--danger);
+    box-shadow: 0 0 4px var(--danger-glow);
+}
+
+.indicator.income {
+    background-color: var(--success);
+    box-shadow: 0 0 4px var(--success-glow);
+}
+
+.indicator.pending {
+    border: 1px solid var(--text-secondary);
+    background: transparent;
+}
+
+/* MODAL DAY DETAILS */
+.day-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid transparent;
+}
+
+.detail-item.despesa {
+    border-left-color: var(--danger);
+}
+
+.detail-item.receita {
+    border-left-color: var(--success);
+}
+
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 70px;
+        /* Smaller on mobile */
+    }
+}

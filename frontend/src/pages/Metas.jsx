@@ -254,19 +254,36 @@ export default function Metas() {
                 </div>
               </div>
 
-              {/* SMART STATS */}
+              {/* SMART STATS 2.0 */}
               {meta.status === 'ativa' && (
                 <div className="meta-smart-stats">
                   {(() => {
-                    const { diasRestantes, sugerido } = calculateSmartStats(meta)
+                    const { diasRestantes, sugerido, mesesRestantes } = calculateSmartStats(meta)
                     return (
                       <>
-                        <div className="smart-stat-item">
-                          <span>⏳ {diasRestantes > 0 ? `${diasRestantes} dias restantes` : 'Vence hoje'}</span>
+                        <div className="smart-stats-grid">
+                          <div className="stat-pill time">
+                            <span className="stat-icon">⏳</span>
+                            <div>
+                              <strong>{diasRestantes > 0 ? diasRestantes : 0}</strong>
+                              <small>dias restantes</small>
+                            </div>
+                          </div>
+
+                          {sugerido > 0 && (
+                            <div className="stat-pill money">
+                              <span className="stat-icon">💡</span>
+                              <div>
+                                <strong>{formatarMoeda(sugerido)}</strong>
+                                <small>por mês</small>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        {sugerido > 0 && (
-                          <div className="smart-stat-item">
-                            <span>💡 Guardar <strong>{formatarMoeda(sugerido)}</strong>/mês</span>
+
+                        {diasRestantes > 0 && sugerido > 0 && (
+                          <div className="smart-tip">
+                            ℹ️ Para atingir sua meta, você precisa guardar aprox. <strong>{formatarMoeda(sugerido / 30)} por dia</strong>.
                           </div>
                         )}
                       </>

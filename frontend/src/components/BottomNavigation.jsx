@@ -21,6 +21,11 @@ export default function BottomNavigation() {
                 <span>Transações</span>
             </Link>
 
+            <Link to="/agenda" className={`nav-item ${isActive('/agenda') ? 'active' : ''}`}>
+                <div className="nav-icon">📅</div>
+                <span>Agenda</span>
+            </Link>
+
             <Link to="/transacoes?action=new" className="nav-item fab-container">
                 <div className="fab-button">
                     +

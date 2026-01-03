@@ -18,6 +18,7 @@ const GastosRecorrentes = lazy(() => import('./pages/GastosRecorrentes'))
 const Investimentos = lazy(() => import('./pages/Investimentos'))
 const Cartoes = lazy(() => import('./pages/Cartoes'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
+const Agenda = lazy(() => import('./pages/Agenda'))
 const Layout = lazy(() => import('./components/Layout'))
 
 // Componente de carregamento
@@ -68,6 +69,7 @@ function AppRoutes() {
           <Route path="cartoes" element={<Cartoes />} />
           <Route path="investimentos" element={<Investimentos />} />
           <Route path="relatorios" element={<Relatorios />} />
+          <Route path="agenda" element={<Agenda />} />
         </Route>
       </Routes>
     </Suspense>
