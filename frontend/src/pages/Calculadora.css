@@ -19,30 +19,36 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 32px;
-    padding: 24px;
+    padding: 20px;
+    /* Reduced from 24px */
     box-shadow:
         0 20px 50px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
+    /* Reduced gap between screen and keys */
 }
 
 /* Screen Section */
 .calc-screen {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.2);
+    /* Added subtle bg for framing */
+    border-radius: 20px;
+    /* Matching corners */
     text-align: right;
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 16px;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    height: 100px;
+    height: 110px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .calc-previous {
     color: var(--text-muted);
-    font-size: 1.1rem;
+    font-size: 1rem;
     min-height: 1.5rem;
     margin-bottom: 4px;
     font-weight: 500;
@@ -50,7 +56,8 @@
 
 .calc-current {
     color: #fff;
-    font-size: 3.5rem;
+    font-size: 3rem;
+    /* Slightly smaller to fit */
     font-weight: 300;
     line-height: 1.1;
     letter-spacing: -1px;
@@ -60,7 +67,8 @@
 .calc-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: 10px;
+    /* Tightened from 12px */
 }
 
 /* Button Styling - Perfect Circles/Squares */
