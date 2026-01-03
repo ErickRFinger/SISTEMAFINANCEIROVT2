@@ -59,11 +59,32 @@ export async function generateFinancialAdvice(userId, userMessage) {
             5. Mantenha a resposta curta (máximo 3 parágrafos).
         `;
 
-        // 3. Call Gemini (Using standard gemini-pro for stability)
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(context);
-        const response = await result.response;
-        return response.text();
+        // 3. Call Gemini (Updated to gemini-1.5-flash        // 3. Call Gemini with Fallback Strategy (Self-Healing)
+        const modelsToTry = ["gemini-1.5-flash", "gemini-pro", "gemini-1.0-pro"];
+        let responseText = null;
+        let lastError = null;
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`🤖 Tentando modelo: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(context);
+                const response = await result.response;
+                responseText = response.text();
+
+                if (responseText) break; // Sucesso!
+            } catch (e) {
+                console.warn(`⚠️ Falha no modelo ${modelName}:`, e.message);
+                lastError = e;
+                continue; // Tenta o próximo
+            }
+        }
+
+        if (!responseText) {
+            throw lastError || new Error("Nenhum modelo de IA respondeu.");
+        }
+
+        return responseText;
 
     } catch (error) {
         console.error('❌ ERRO CRÍTICO NA IA:', error);
