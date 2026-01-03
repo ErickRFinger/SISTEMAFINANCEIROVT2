@@ -7,7 +7,7 @@ export async function generateFinancialAdvice(userId, userMessage) {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             console.error('⚠️ GEMINI_API_KEY não configurada no backend.');
-            return "O Cérebro está desconectado (Falta configurar a Chave de API).";
+            return "O Cérebro está desconectado (Falta configurar a Chave de API no Backend).";
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
