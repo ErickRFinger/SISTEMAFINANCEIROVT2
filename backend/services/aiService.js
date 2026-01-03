@@ -52,14 +52,25 @@ export async function generateFinancialAdvice(userId, userMessage) {
             5. Mantenha a resposta curta (máximo 3 parágrafos).
         `;
 
-        // 3. Call Gemini
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        // 3. Call Gemini (Updated to Flash model for speed/efficiency)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(context);
         const response = await result.response;
         return response.text();
 
     } catch (error) {
-        console.error('Erro na AI:', error);
-        return "Desculpe, meu cérebro está um pouco confuso agora. Tente novamente mais tarde. 🧠💤";
+        console.error('❌ ERRO DETALHADO NA IA:', error);
+
+        // Log environment status for debugging
+        console.log('🔍 Status do Ambiente:', {
+            hasKey: !!process.env.GEMINI_API_KEY,
+            keyLength: process.env.GEMINI_API_KEY?.length
+        });
+
+        if (error.message?.includes('API key')) {
+            return "Parece que há um problema com a Chave da API. Verifique a configuração no painel.";
+        }
+
+        return "Desculpe, tive um erro técnico ao processar seu pedido. Tente novamente em alguns instantes. 🧠🔧";
     }
 }
