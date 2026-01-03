@@ -93,4 +93,3 @@ _Por favor, copie essa mensagem e mande para o desenvolvedor._
         `;
     }
 }
-```
