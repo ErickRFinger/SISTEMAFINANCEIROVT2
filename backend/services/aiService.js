@@ -73,7 +73,6 @@ export async function generateFinancialAdvice(userId, userMessage) {
             console.warn('⚠️ SDK falhou. Iniciando Protocolo de Auto-Descoberta de Modelos...', sdkError.message);
 
             // PASSO 1: Descobrir quais modelos essa chave PODE acessar
-            // Isso pergunta ao Google: "O que eu posso usar?" em vez de adivinhar.
             let availableModels = [];
             try {
                 const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
@@ -82,26 +81,25 @@ export async function generateFinancialAdvice(userId, userMessage) {
                 if (listResp.ok) {
                     const listData = await listResp.json();
                     if (listData.models) {
-                        // Filtramos apenas modelos que servem para gerar texto (generateContent)
                         availableModels = listData.models
                             .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
                             .map(m => m.name); // Ex: "models/gemini-1.5-flash"
 
-                        // Ordenar para tentar os pro/flash primeiro (lógica simples)
+                        // Priorizar Flash e Pro
                         availableModels.sort((a, b) => {
-                            if (a.includes('flash')) return -1;
-                            if (b.includes('flash')) return 1;
-                            return 0;
+                            const aScore = a.includes('flash') ? 2 : a.includes('pro') ? 1 : 0;
+                            const bScore = b.includes('flash') ? 2 : b.includes('pro') ? 1 : 0;
+                            return bScore - aScore;
                         });
 
-                        console.log("✅ Modelos descobertos para esta chave:", availableModels);
+                        console.log("✅ Modelos descobertos:", availableModels);
                     }
                 }
             } catch (listErr) {
                 console.warn("⚠️ Falha ao listar modelos:", listErr.message);
             }
 
-            // Fallback se a lista falhar: Tenta os conhecidos (com o prefixo correto)
+            // Fallback
             if (availableModels.length === 0) {
                 availableModels = ["models/gemini-1.5-flash", "models/gemini-pro", "models/gemini-1.0-pro"];
             }
@@ -109,41 +107,45 @@ export async function generateFinancialAdvice(userId, userMessage) {
             // PASSO 2: Tentar cada modelo da lista
             let lastErrorMsg = "";
 
-            for (const model of availableModels) {
+            for (const modelName of availableModels) {
                 try {
-                    // O modelo já vem como "models/nome-do-modelo", então a URL fica limpa:
-                    // https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
-                    // OU se a url base já tem models/, ajustamos.
+                    // Limpar o prefixo "models/" se existir, pois a URL raw exige apenas o ID se usarmos a estrutura padrão,
+                    // mas a docs diz models/ID. Vamos usar o ID limpo para garantir.
+                    const modelId = modelName.startsWith('models/') ? modelName.split('/')[1] : modelName;
 
-                    // Ajuste seguro da URL
-                    const modelId = model.startsWith('models/') ? model.split('/')[1] : model;
+                    console.log(`🔄 Tentando modelo: ${modelId}...`);
+
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: context }] }]
+                        })
                     });
 
                     if (!response.ok) {
                         const errText = await response.text();
-                        // Se for 404, tenta o próximo. Se for outro erro, loga.
-                        throw new Error(`Status ${response.status} - ${errText}`);
+                        console.warn(`   ❌ ${modelId} falhou: ${response.status} - ${errText}`);
+
+                        // Se for 403 ou 404, proximo. Se for 429 (rate limit), talvez devêssemos esperar, mas aqui vamos pular.
+                        lastErrorMsg = `[${modelId}] ${response.status}: ${errText}`;
+                        continue;
                     }
 
                     const data = await response.json();
 
                     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                        // SUCESSO! 
+                        console.log(`✅ SUCESSO com ${modelId}`);
                         return data.candidates[0].content.parts[0].text;
                     }
-                } catch (httpError) {
-                    lastErrorMsg = httpError.message;
-                    // Continua tentando os outros...
+                } catch (currentErr) {
+                    lastErrorMsg = currentErr.message;
                 }
             }
 
-            throw new Error(`Falha total. Modelos tentados: ${availableModels.length}. Último erro: ${lastErrorMsg}`);
+            throw new Error(`Todos os modelos falharam. Último erro: ${lastErrorMsg}`);
         }
 
     } catch (error) {
