@@ -58,7 +58,7 @@ export default function ChatWidget() {
 
             setMessages(prev => [...prev, {
                 id: Date.now() + 1,
-                text: `⚠️ **Falha**: ${errorMsg}`,
+                text: `⚠️ **Falha**: ${errorMsg}\n\n*Tente recarregar ou verificar se a chave da API está correta.*`,
                 sender: 'ai',
                 timestamp: new Date()
             }])
