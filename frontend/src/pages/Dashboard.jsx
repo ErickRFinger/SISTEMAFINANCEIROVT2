@@ -100,14 +100,22 @@ export default function Dashboard() {
       setTransacoes(transacoesLimitadas)
       setPerfil(perfilData)
 
-      // Carregar bancos para calcular total guardado
+      // Carregar bancos e investimentos para calcular Patrimônio Total
       try {
-        const bancosRes = await api.get('/bancos')
+        const [bancosRes, investimentosRes] = await Promise.all([
+          api.get('/bancos'),
+          api.get('/investimentos')
+        ])
+
         const moveisBancos = bancosRes.data || []
-        const total = moveisBancos.reduce((acc, banco) => acc + (Number(banco.saldo_atual) || 0), 0)
-        setTotalGuardado(total)
+        const totalBancos = moveisBancos.reduce((acc, banco) => acc + (Number(banco.saldo_atual) || 0), 0)
+
+        const listaInvestimentos = investimentosRes.data || []
+        const totalInvestimentos = listaInvestimentos.reduce((acc, inv) => acc + (Number(inv.valor_atual) || 0), 0)
+
+        setTotalGuardado(totalBancos + totalInvestimentos)
       } catch (error) {
-        console.error('❌ Erro ao carregar bancos:', error)
+        console.error('❌ Erro ao carregar patrimônio:', error)
       }
 
     } catch (error) {
