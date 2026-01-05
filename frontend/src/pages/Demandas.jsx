@@ -177,6 +177,31 @@ export default function Demandas() {
                 </>
             )}
 
+            {/* Empty State / Init Setup */}
+            {!loading && columns.length === 0 && (
+                <div className="empty-state-kanban" style={{ textAlign: 'center', padding: '3rem' }}>
+                    <h2>⚠️ Quadro Vazio</h2>
+                    <p>Você ainda não tem colunas configuradas.</p>
+                    <button
+                        className="btn-primary"
+                        style={{ marginTop: '1rem' }}
+                        onClick={async () => {
+                            try {
+                                setLoading(true)
+                                await api.post('/kanban/setup')
+                                fetchKanban()
+                            } catch (e) {
+                                alert('Erro ao criar colunas: ' + e.message)
+                                setLoading(false)
+                            }
+                        }}
+                    >
+                        ⚡ Criar Colunas Padrão
+                    </button>
+                </div>
+            )}
+
+
             {/* Modal - Reutilizar estrutura simples */}
             {modalOpen && (
                 <div className="modal-overlay">
