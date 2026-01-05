@@ -406,8 +406,84 @@ textarea:focus {
     opacity: 0;
   }
 
-  to {
-    transform: translateY(0) scale(1);
-    opacity: 1;
+  opacity: 1;
+}
+}
+
+/* --- MOBILE CARDS (SUBSTITUTE TABLES) --- */
+.mobile-only-cards {
+  display: none;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.mobile-card-item {
+  background: var(--bg-card);
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.mobile-card-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.mobile-card-body p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.mobile-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive Switching */
+@media (max-width: 1024px) {
+  .desktop-only {
+    display: none !important;
   }
+
+  .mobile-only-cards {
+    display: grid;
+  }
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.badge-neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
 }

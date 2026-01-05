@@ -1,0 +1,223 @@
+/* Sidebar.css - Premium Glassmorphism Syle */
+
+:root {
+    --sidebar-width: 280px;
+    --sidebar-bg: rgba(15, 23, 42, 0.95);
+    /* Quase sólido para legibilidade */
+    --sidebar-border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-right: var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Header */
+.sidebar-header {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--sidebar-border);
+}
+
+.brand-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+}
+
+.close-btn-mobile {
+    display: none;
+    /* Só aparece no mobile */
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    padding: 0.5rem;
+}
+
+/* User Section */
+.user-section {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.user-info {
+    text-align: center;
+}
+
+.user-name {
+    display: block;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.mode-switch {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.mode-switch:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.mode-switch.pessoal {
+    border-color: var(--primary);
+}
+
+.mode-switch.empresarial {
+    border-color: var(--warning);
+    /* Amarelo/Dourado para business */
+    color: var(--warning);
+}
+
+/* Navigation */
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.nav-group-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin: 1rem 0 0.5rem 0.5rem;
+    font-weight: 600;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 12px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    transform: translateX(4px);
+}
+
+.nav-item.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.nav-icon {
+    font-size: 1.2rem;
+}
+
+/* Footer */
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: var(--sidebar-border);
+}
+
+.logout-btn {
+    width: 100%;
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: var(--danger);
+    color: white;
+    box-shadow: 0 4px 12px var(--danger-glow);
+}
+
+/* Overlay (Mobile Only) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 900;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: 85%;
+        /* Gaveta larga no mobile */
+        max-width: 300px;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay.open {
+        display: block;
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .close-btn-mobile {
+        display: block;
+    }
+}
