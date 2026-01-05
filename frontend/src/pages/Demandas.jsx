@@ -38,27 +38,38 @@ export default function Demandas() {
 
     // Drag & Drop Mock (Simples para garantir funcionamento sem dnd-kit pesado)
     // Para produção real, usaríamos react-beautiful-dnd, mas aqui vamos focar no visual + ações de botão "Mover"
-    const moveCard = async (card, direction) => {
-        // Encontrar colunas adjacentes
-        // Esta lógica seria no backend idealmente, mas vamos simplificar:
-        // Apenas abrimos o modal de edição e o usuário muda o status? 
-        // Não, o usuário pediu Kanban Funcionando.
-        // Vamos fazer botões [<] [>] no card para mover de coluna.
-
+    // Drag & Drop Handler (Native HTML5)
+    const handleDrop = async (cardId, novaColunaId) => {
         try {
-            const currentAxis = columns.findIndex(col => col.titulo === card.status)
-            let targetColIndex = direction === 'next' ? currentAxis + 1 : currentAxis - 1
+            // Optimistic update locally
+            const cardIdStr = String(cardId);
+            const sourceCol = columns.find(col => col.cards.some(c => String(c.id) === cardIdStr));
+            if (!sourceCol || sourceCol.id === novaColunaId) return;
 
-            if (targetColIndex >= 0 && targetColIndex < columns.length) {
-                const targetCol = columns[targetColIndex]
-                // Use the specific MOVE endpoint
-                await api.put(`/kanban/cards/${card.id}/move`, {
-                    nova_coluna_id: targetCol.id
-                })
-                fetchKanban()
-            }
-        } catch (e) { console.error(e) }
-    }
+            // Move card in UI state first
+            setColumns(prev => prev.map(col => {
+                if (col.id === sourceCol.id) {
+                    return { ...col, cards: col.cards.filter(c => String(c.id) !== cardIdStr) };
+                }
+                if (col.id === novaColunaId) {
+                    const card = sourceCol.cards.find(c => String(c.id) === cardIdStr);
+                    return { ...col, cards: [...col.cards, { ...card, coluna_id: novaColunaId }] };
+                }
+                return col;
+            }));
+
+            // Call API
+            await api.put(`/kanban/cards/${cardId}/move`, {
+                nova_coluna_id: novaColunaId
+            });
+            // Background refresh to confirm consistency
+            fetchKanban();
+        } catch (error) {
+            console.error('Erro ao mover card:', error);
+            // Revert on error would be ideal, but simply refetching works too
+            fetchKanban();
+        }
+    };
 
     const openModal = (card = null, colId = null) => {
         if (card) {
@@ -134,14 +145,41 @@ export default function Demandas() {
                     {viewMode === 'kanban' ? (
                         <div className="kanban-board">
                             {columns.map(col => (
-                                <div key={col.id} className="kanban-column">
+                                <div
+                                    key={col.id}
+                                    className="kanban-column"
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.currentTarget.classList.add('drag-over');
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.currentTarget.classList.remove('drag-over');
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.currentTarget.classList.remove('drag-over');
+                                        const cardId = e.dataTransfer.getData('cardId');
+                                        if (cardId) handleDrop(cardId, col.id);
+                                    }}
+                                >
                                     <div className="kanban-column-header">
                                         <h3>{col.titulo}</h3>
                                         <span className="count-badge">{col.cards?.length || 0}</span>
                                     </div>
                                     <div className="kanban-column-body">
                                         {col.cards?.map(card => (
-                                            <div key={card.id} className="kanban-card">
+                                            <div
+                                                key={card.id}
+                                                className="kanban-card"
+                                                draggable="true"
+                                                onDragStart={(e) => {
+                                                    e.dataTransfer.setData('cardId', card.id);
+                                                    e.currentTarget.style.opacity = '0.5';
+                                                }}
+                                                onDragEnd={(e) => {
+                                                    e.currentTarget.style.opacity = '1';
+                                                }}
+                                            >
                                                 <div className="kanban-card-top">
                                                     <span className={`priority-dot ${card.prioridade}`} />
                                                     {card.tipo_movimento === 'entrada' ? '💰' : '💸'}
@@ -150,10 +188,8 @@ export default function Demandas() {
                                                 {card.valor && <p className="kanban-value">R$ {Number(card.valor).toLocaleString('pt-BR')}</p>}
 
                                                 <div className="kanban-controls">
-                                                    <button onClick={() => moveCard(card, 'prev')} disabled={col.titulo === columns[0].titulo}>←</button>
-                                                    <button onClick={() => openModal(card)}>✎</button>
-                                                    <button onClick={() => handleDelete(card.id)}>🗑</button>
-                                                    <button onClick={() => moveCard(card, 'next')} disabled={col.titulo === columns[columns.length - 1].titulo}>→</button>
+                                                    <button className="btn-icon" onClick={() => openModal(card)}>✎</button>
+                                                    <button className="btn-icon delete" onClick={() => handleDelete(card.id)}>🗑</button>
                                                 </div>
                                             </div>
                                         ))}
