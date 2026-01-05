@@ -15,15 +15,27 @@
     ],
     "routes": [
         {
-            "handle": "filesystem"
-        },
-        {
             "src": "/api/(.*)",
             "dest": "/backend/api/index.js"
         },
         {
+            "src": "/assets/(.*)",
+            "dest": "/frontend/assets/$1"
+        },
+        {
+            "src": "/favicon.ico",
+            "dest": "/frontend/favicon.ico"
+        },
+        {
+            "src": "/manifest.webmanifest",
+            "dest": "/frontend/manifest.webmanifest"
+        },
+        {
+            "handle": "filesystem"
+        },
+        {
             "src": "/(.*)",
-            "dest": "/index.html"
+            "dest": "/frontend/index.html"
         }
     ]
 }
