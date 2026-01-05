@@ -20,6 +20,12 @@ const Calculadora = lazy(() => import('./pages/Calculadora'))
 const Cartoes = lazy(() => import('./pages/Cartoes'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
 const Agenda = lazy(() => import('./pages/Agenda'))
+const Funcionarios = lazy(() => import('./pages/Funcionarios'))
+const Clientes = lazy(() => import('./pages/Clientes'))
+const Estoque = lazy(() => import('./pages/Estoque'))
+const Servicos = lazy(() => import('./pages/Servicos'))
+const Kanban = lazy(() => import('./pages/Kanban'))
+const Demandas = lazy(() => import('./pages/Demandas'))
 const Layout = lazy(() => import('./components/Layout'))
 
 // Componente de carregamento
@@ -72,6 +78,12 @@ function AppRoutes() {
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="calculadora" element={<Calculadora />} />
           <Route path="agenda" element={<Agenda />} />
+          <Route path="funcionarios" element={<Funcionarios />} />
+          <Route path="clientes" element={<Clientes />} />
+          <Route path="estoque" element={<Estoque />} />
+          <Route path="servicos" element={<Servicos />} />
+          <Route path="kanban" element={<Kanban />} />
+          <Route path="demandas" element={<Demandas />} />
         </Route>
       </Routes>
     </Suspense>

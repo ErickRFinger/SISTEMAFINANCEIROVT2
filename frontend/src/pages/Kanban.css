@@ -1,0 +1,123 @@
+.kanban-page {
+    padding: 20px;
+    height: calc(100vh - 80px);
+    /* Fill screen minus header */
+    display: flex;
+    flex-direction: column;
+}
+
+.kanban-board {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    flex: 1;
+}
+
+.kanban-column {
+    min-width: 300px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+}
+
+.column-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.column-count {
+    background: var(--bg-primary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.column-body {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* CARDS */
+.kanban-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+    border-left: 4px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+}
+
+.kanban-card.p-alta {
+    border-left-color: #ef4444;
+}
+
+.kanban-card.p-media {
+    border-left-color: #f59e0b;
+}
+
+.kanban-card.p-baixa {
+    border-left-color: #10b981;
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.meta-tag {
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.add-card-btn {
+    margin: 10px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    padding: 10px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.add-card-btn:hover {
+    background: var(--bg-primary);
+    color: var(--primary);
+    border-color: var(--primary);
+}

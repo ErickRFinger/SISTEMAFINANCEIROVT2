@@ -7,6 +7,7 @@ export default function Register() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [tipoConta, setTipoConta] = useState('pessoal')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -63,7 +64,7 @@ export default function Register() {
     setLoading(true)
 
     try {
-      const result = await register(nome.trim(), email.trim(), senha)
+      const result = await register(nome.trim(), email.trim(), senha, tipoConta)
 
       if (result.success) {
         navigate('/dashboard')
@@ -110,6 +111,65 @@ export default function Register() {
               required
               placeholder="seu@email.com"
             />
+          </div>
+
+          <div className="form-group">
+            <label>Tipo de Conta</label>
+            <div className="account-type-selector" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <button
+                type="button"
+                className={`type-btn ${tipoConta === 'pessoal' ? 'active' : ''}`}
+                onClick={() => setTipoConta('pessoal')}
+                style={{
+                  padding: '10px',
+                  border: tipoConta === 'pessoal' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  borderRadius: '8px',
+                  background: tipoConta === 'pessoal' ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-secondary)',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                👤 Pessoal
+              </button>
+              <button
+                type="button"
+                className={`type-btn ${tipoConta === 'empresarial' ? 'active' : ''}`}
+                onClick={() => setTipoConta('empresarial')}
+                style={{
+                  padding: '10px',
+                  border: tipoConta === 'empresarial' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  borderRadius: '8px',
+                  background: tipoConta === 'empresarial' ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-secondary)',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                🏢 Empresarial
+              </button>
+              <button
+                type="button"
+                className={`type-btn ${tipoConta === 'hibrido' ? 'active' : ''}`}
+                onClick={() => setTipoConta('hibrido')}
+                style={{
+                  padding: '10px',
+                  border: tipoConta === 'hibrido' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  borderRadius: '8px',
+                  background: tipoConta === 'hibrido' ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-secondary)',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                🚀 Ambos
+              </button>
+            </div>
+            <small style={{ display: 'block', marginTop: '5px', color: 'var(--text-muted)' }}>
+              {tipoConta === 'pessoal' && 'Para gerenciar suas finanças pessoais.'}
+              {tipoConta === 'empresarial' && 'Para gerenciar sua empresa (estoque, funcionários, clientes).'}
+              {tipoConta === 'hibrido' && 'Tudo em um só lugar: Pessoal + Empresarial.'}
+            </small>
           </div>
 
           <div className="form-group">
