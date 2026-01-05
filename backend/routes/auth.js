@@ -46,11 +46,15 @@ router.post('/register', [
       return res.status(400).json({ error: errorMessages });
     }
 
-    const { nome, email, senha } = req.body;
+    const { nome, email, senha, tipo_conta } = req.body;
 
     if (!nome || !email || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
     }
+
+    // Validar tipo de conta se fornecido
+    const tiposPermitidos = ['pessoal', 'empresarial', 'hibrido'];
+    const contaTipo = tipo_conta && tiposPermitidos.includes(tipo_conta) ? tipo_conta : 'pessoal';
 
     // Normalizar email
     const emailNormalizado = email.toLowerCase().trim();
@@ -77,7 +81,12 @@ router.post('/register', [
     // Inserir usuário
     const { data: newUser, error: userError } = await supabase
       .from('users')
-      .insert([{ nome: nome.trim(), email: emailNormalizado, senha: senhaHash }])
+      .insert([{
+        nome: nome.trim(),
+        email: emailNormalizado,
+        senha: senhaHash,
+        tipo_conta: contaTipo
+      }])
       .select()
       .single();
 
@@ -142,7 +151,8 @@ router.post('/register', [
       user: {
         id: newUser.id,
         nome: newUser.nome,
-        email: newUser.email
+        email: newUser.email,
+        tipo_conta: newUser.tipo_conta
       }
     });
   } catch (error) {
@@ -241,7 +251,8 @@ router.post('/login', [
       user: {
         id: user.id,
         nome: user.nome,
-        email: user.email
+        email: user.email,
+        tipo_conta: user.tipo_conta
       }
     });
 
@@ -272,7 +283,7 @@ router.get('/verify', async (req, res) => {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, nome, email')
+      .select('id, nome, email, tipo_conta')
       .eq('id', decoded.userId)
       .single();
 

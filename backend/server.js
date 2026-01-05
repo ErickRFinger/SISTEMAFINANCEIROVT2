@@ -15,6 +15,10 @@ import gastosRecorrentesRoutes from './routes/gastos-recorrentes.js';
 import investimentosRoutes from './routes/investimentos.js';
 import cartoesRoutes from './routes/cartoes.js';
 import setupRoutes from './routes/setup.js';
+import funcionariosRoutes from './routes/funcionarios.js';
+import produtosRoutes from './routes/produtos.js';
+import kanbanRoutes from './routes/kanban.js';
+import clientesRoutes from './routes/clientes.js';
 
 dotenv.config();
 
@@ -89,6 +93,8 @@ app.use('/api/gastos-recorrentes', gastosRecorrentesRoutes);
 app.use('/api/investimentos', investimentosRoutes);
 app.use('/api/cartoes', cartoesRoutes);
 app.use('/api/setup', setupRoutes);
+app.use('/api/funcionarios', funcionariosRoutes);
+app.use('/api/produtos', produtosRoutes);
 
 // import { generateFinancialAdvice } from './services/aiService.js'; // REMOVIDO: Import estático causava erro
 import { authenticateToken } from './middleware/auth.js';
@@ -127,5 +133,8 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
   });
 }
+
+app.use('/api/kanban', kanbanRoutes);
+app.use('/api/clientes', clientesRoutes);
 
 export default app;
