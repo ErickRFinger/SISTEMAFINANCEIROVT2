@@ -62,6 +62,50 @@ class TransacaoService {
     }
 
     /**
+     * Atualiza o saldo do banco
+     * @private
+     */
+    async _updateBankBalance(userId, bancoId, valor, tipo, operation = 'add') {
+        if (!bancoId) return;
+
+        try {
+            // Buscar saldo atual
+            const { data: banco, error: getError } = await supabase
+                .from('bancos')
+                .select('saldo_atual')
+                .eq('id', bancoId)
+                .eq('user_id', userId)
+                .single();
+
+            if (getError) throw getError;
+            if (!banco) return; // Banco não encontrado
+
+            let novoSaldo = Number(banco.saldo_atual);
+            const valorNum = Number(valor);
+
+            // Se operation for 'remove', invertemos a lógica (para desfazer transação)
+            const multiplier = operation === 'add' ? 1 : -1;
+
+            if (tipo === 'receita') {
+                novoSaldo += (valorNum * multiplier);
+            } else if (tipo === 'despesa') {
+                novoSaldo -= (valorNum * multiplier);
+            }
+
+            // Atualizar saldo
+            await supabase
+                .from('bancos')
+                .update({ saldo_atual: novoSaldo })
+                .eq('id', bancoId)
+                .eq('user_id', userId);
+
+        } catch (error) {
+            console.error('Erro ao atualizar saldo do banco:', error);
+            // Não bloqueamos o fluxo principal, mas logamos o erro
+        }
+    }
+
+    /**
      * Cria uma nova transação
      */
     async create(userId, transactionData) {
@@ -127,7 +171,7 @@ class TransacaoService {
                 descricao,
                 valor: parseFloat(valor),
                 data: dataTransacao,
-                is_recorrente: transactionData.is_recorrente || false // Fix: Added is_recorrente support
+                is_recorrente: transactionData.is_recorrente || false
             }])
             .select(`
         *,
@@ -139,6 +183,11 @@ class TransacaoService {
 
         if (error) throw error;
 
+        // Atualizar saldo do banco
+        if (banco_id) {
+            await this._updateBankBalance(userId, banco_id, valor, tipo, 'add');
+        }
+
         return formatTransaction(novaTransacao);
     }
 
@@ -146,9 +195,9 @@ class TransacaoService {
      * Atualiza uma transação
      */
     async update(id, userId, transactionData) {
-        // Nota: Validações similares ao create poderiam ser adicionadas aqui se os IDs mudarem
-        // Por enquanto, confiamos que o frontend envia IDs consistentes ou o banco rejeita FKs
-        // Mas ideally, we should validade ownership again.
+        // 1. Buscar transação antiga para reverter saldo
+        const transacaoAntiga = await this.getById(id, userId);
+        if (!transacaoAntiga) throw new Error('Transação não encontrada');
 
         const { data, error } = await supabase
             .from('transacoes')
@@ -173,6 +222,17 @@ class TransacaoService {
 
         if (error) throw error;
 
+        // Lógica de atualização de saldo:
+        // 1. Reverter efeito da antiga (se tinha banco)
+        if (transacaoAntiga.banco_id) {
+            await this._updateBankBalance(userId, transacaoAntiga.banco_id, transacaoAntiga.valor, transacaoAntiga.tipo, 'remove');
+        }
+
+        // 2. Aplicar efeito da nova (se tem banco)
+        if (transactionData.banco_id) {
+            await this._updateBankBalance(userId, transactionData.banco_id, transactionData.valor, transactionData.tipo, 'add');
+        }
+
         return formatTransaction(data);
     }
 
@@ -180,6 +240,9 @@ class TransacaoService {
      * Remove uma transação
      */
     async delete(id, userId) {
+        // 1. Buscar transação para reverter saldo antes de deletar
+        const transacao = await this.getById(id, userId);
+
         const { error } = await supabase
             .from('transacoes')
             .delete()
@@ -187,6 +250,12 @@ class TransacaoService {
             .eq('user_id', userId);
 
         if (error) throw error;
+
+        // Reverter saldo se a transação existia e tinha banco
+        if (transacao && transacao.banco_id) {
+            await this._updateBankBalance(userId, transacao.banco_id, transacao.valor, transacao.tipo, 'remove');
+        }
+
         return true;
     }
 
