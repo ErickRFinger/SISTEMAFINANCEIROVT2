@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "vercel-build": "vite build",
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.2.1",
