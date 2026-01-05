@@ -40,7 +40,7 @@ export default function Bancos() {
       const response = await api.get('/bancos')
       console.log('✅ [BANCOS] Bancos carregados:', response.data?.length || 0)
       setBancos(response.data || [])
-      
+
       // Carregar cartões de cada banco
       const cartoesPorBanco = {}
       for (const banco of response.data) {
@@ -84,7 +84,7 @@ export default function Bancos() {
           cor: formDataBanco.cor,
           observacoes: formDataBanco.observacoes
         }
-        
+
         // Incluir saldo_atual apenas se foi modificado
         if (formDataBanco.saldo_atual !== undefined && formDataBanco.saldo_atual !== '') {
           const saldoAtual = parseFloat(formDataBanco.saldo_atual)
@@ -92,7 +92,7 @@ export default function Bancos() {
             updateData.saldo_atual = saldoAtual
           }
         }
-        
+
         await api.put(`/bancos/${editingBanco.id}`, updateData)
       } else {
         // Para criação, enviar saldo_inicial
@@ -103,7 +103,7 @@ export default function Bancos() {
           cor: formDataBanco.cor,
           observacoes: formDataBanco.observacoes
         }
-        
+
         await api.post('/bancos', createData)
       }
       setShowModalBanco(false)
@@ -113,11 +113,11 @@ export default function Bancos() {
       alert(editingBanco ? 'Banco atualizado com sucesso!' : 'Banco criado com sucesso!')
     } catch (error) {
       console.error('Erro ao salvar banco:', error)
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.errors?.[0]?.msg || 
-                          error.response?.data?.details ||
-                          error.message || 
-                          'Erro ao salvar banco'
+      const errorMessage = error.response?.data?.error ||
+        error.response?.data?.errors?.[0]?.msg ||
+        error.response?.data?.details ||
+        error.message ||
+        'Erro ao salvar banco'
       alert(errorMessage)
     }
   }
@@ -287,7 +287,7 @@ export default function Bancos() {
       ) : (
         <div className="bancos-list">
           {bancos.map((banco) => (
-            <div key={banco.id} className="card banco-card">
+            <div key={banco.id} className="card banco-card" style={{ overflow: 'visible' }}>
               <div className="banco-header">
                 <div className="banco-info">
                   <div

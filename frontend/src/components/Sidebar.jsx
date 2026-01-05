@@ -29,7 +29,7 @@ export default function Sidebar({ isOpen, toggleMenu }) {
 
     // Links Empresariais
     const businessLinks = [
-        { path: '/dashboard', label: 'Business Dash', icon: '🏢' },
+        { path: '/business-dashboard', label: 'Business Dash', icon: '🏢' },
         { path: '/demandas', label: 'Demandas', icon: '📑' },
         { path: '/funcionarios', label: 'Funcionários', icon: '👥' },
         { path: '/clientes', label: 'Clientes', icon: '🤝' },

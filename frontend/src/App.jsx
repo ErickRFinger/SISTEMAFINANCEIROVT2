@@ -26,6 +26,7 @@ const Estoque = lazy(() => import('./pages/Estoque'))
 const Servicos = lazy(() => import('./pages/Servicos'))
 const Kanban = lazy(() => import('./pages/Kanban'))
 const Demandas = lazy(() => import('./pages/Demandas'))
+const BusinessDashboard = lazy(() => import('./pages/BusinessDashboard'))
 const Layout = lazy(() => import('./components/Layout'))
 
 // Componente de carregamento
@@ -84,6 +85,7 @@ function AppRoutes() {
           <Route path="servicos" element={<Servicos />} />
           <Route path="kanban" element={<Kanban />} />
           <Route path="demandas" element={<Demandas />} />
+          <Route path="business-dashboard" element={<BusinessDashboard />} />
         </Route>
       </Routes>
     </Suspense>
