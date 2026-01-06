@@ -43,6 +43,17 @@ router.post('/', authenticateToken, async (req, res) => {
             margem_lucro
         } = req.body;
 
+        // VALIDAÇÃO BÁSICA
+        if (!nome || nome.trim() === '') {
+            return res.status(400).json({ error: 'Nome é obrigatório.' });
+        }
+
+        const tpItem = tipo_item || 'produto';
+
+        if (tpItem === 'produto' && (quantidade_estoque !== undefined && quantidade_estoque < 0)) {
+            return res.status(400).json({ error: 'Estoque não pode ser negativo.' });
+        }
+
         const { data, error } = await supabase
             .from('produtos')
             .insert([{
@@ -52,7 +63,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 preco_venda: preco_venda || 0,
                 preco_custo: preco_custo || 0,
                 quantidade_estoque: quantidade_estoque || 0,
-                tipo_item: tipo_item || 'produto',
+                tipo_item: tpItem,
                 localizacao,
                 margem_lucro
             }])
@@ -83,6 +94,19 @@ router.put('/:id', authenticateToken, async (req, res) => {
             margem_lucro
         } = req.body;
 
+        // VALIDAÇÃO BÁSICA
+        if (!nome || nome.trim() === '') {
+            return res.status(400).json({ error: 'Nome é obrigatório.' });
+        }
+
+        if (tipo_item === 'produto' && quantidade_estoque < 0) {
+            return res.status(400).json({ error: 'Estoque não pode ser negativo.' });
+        }
+
+        if (preco_venda < 0 || preco_custo < 0) {
+            return res.status(400).json({ error: 'Preços não podem ser negativos.' });
+        }
+
         const { data, error } = await supabase
             .from('produtos')
             .update({
@@ -91,7 +115,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 preco_venda,
                 preco_custo,
                 quantidade_estoque,
-                tipo_item,
+                tipo_item, // 'produto' or 'servico'
                 localizacao,
                 margem_lucro
             })
