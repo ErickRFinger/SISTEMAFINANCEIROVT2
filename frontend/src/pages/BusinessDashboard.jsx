@@ -15,7 +15,7 @@ import {
     Cell,
     Legend
 } from 'recharts'
-import './Dashboard.css' // Reutilizar estilos premium
+import './BusinessDashboard.css' // Updated Import
 
 export default function BusinessDashboard() {
     const [loading, setLoading] = useState(true)
@@ -39,21 +39,17 @@ export default function BusinessDashboard() {
     const fetchBusinessData = useCallback(async () => {
         setLoading(true)
 
-        // Wrapper to catch individual failures
         const safeFetch = (promise, fallback) => promise.then(res => res.data).catch(err => {
             console.warn('Falha parcial no dashboard:', err.message);
             return fallback;
         });
 
         try {
-            const [resumo, receivables, transacoes, projecao, categorias] = await Promise.all([
+            const [resumo, receivables, transacoes, projecao] = await Promise.all([
                 safeFetch(api.get('/transacoes/resumo/saldo', { params: mesAno }), { receitas: 0, despesas: 0, saldo: 0 }),
                 safeFetch(api.get('/transacoes/resumo/receber'), { total: 0 }),
                 safeFetch(api.get('/transacoes', { params: mesAno }), []),
-                safeFetch(api.get('/transacoes/projecao?dias=30'), []),
-                // New: Category Data (Mocked for now or fetched if endpoint exists)
-                // safeFetch(api.get('/analytics/categorias'), []) 
-                // We will derive category data from transacoes locally for now to save endpoints
+                safeFetch(api.get('/transacoes/projecao?dias=30'), [])
             ]);
 
             setStats({
@@ -110,201 +106,246 @@ export default function BusinessDashboard() {
 
     useEffect(() => {
         fetchBusinessData()
-
         const handleFocus = () => fetchBusinessData()
         window.addEventListener('focus', handleFocus)
-
         const handleEvent = () => setTimeout(fetchBusinessData, 500)
         window.addEventListener('transacaoCriada', handleEvent)
-
         return () => {
             window.removeEventListener('focus', handleFocus)
             window.removeEventListener('transacaoCriada', handleEvent)
         }
     }, [fetchBusinessData])
 
-    if (loading) return <div className="loading">Carregando Painel Empresarial...</div>
+    if (loading) return (
+        <div className="business-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div className="loading-spinner"></div>
+        </div>
+    )
 
     return (
-        <div className="dashboard-container">
+        <div className="business-dashboard">
             {/* Header */}
-            <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h1>🚀 Business Dashboard</h1>
-                    <p className="subtitle">Visão estratégica da sua empresa</p>
+            <header className="bd-header">
+                <div className="bd-title">
+                    <h1>🚀 Business Intelligence</h1>
+                    <p className="bd-subtitle">Visão estratégica e performance financeira</p>
                 </div>
-
-                {/* Date Selector */}
-                <div className="mes-selector">
+                <div className="bd-controls">
                     <input
                         type="month"
+                        className="bd-date-input"
                         value={`${mesAno.ano}-${mesAno.mes}`}
                         onChange={(e) => {
                             const [ano, mes] = e.target.value.split('-')
                             setMesAno({ mes, ano })
                         }}
-                        style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ccc' }}
                     />
                 </div>
-            </div>
+            </header>
 
             {/* KPI Cards */}
-            <div className="stats-grid">
-                <div className="stat-card premium-card">
-                    <div className="stat-icon income-icon">💰</div>
-                    <div className="stat-info">
-                        <h3>Faturamento</h3>
-                        <p className="stat-value">R$ {stats.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        <span className="stat-trend positive">Receita Bruta</span>
+            <div className="bd-kpi-grid">
+                {/* Faturamento */}
+                <div className="kpi-card receita">
+                    <div className="kpi-header">
+                        <span className="kpi-icon">💰</span>
+                        <span className="kpi-trend trend-up">↗ +12%</span>
+                    </div>
+                    <div>
+                        <div className="kpi-value">R$ {stats.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div className="kpi-title">Faturamento Bruto</div>
                     </div>
                 </div>
 
-                <div className="stat-card premium-card">
-                    <div className="stat-icon balance-icon">📈</div>
-                    <div className="stat-info">
-                        <h3>Lucro Líquido</h3>
-                        <p className="stat-value">R$ {stats.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        <span className={`stat-trend ${stats.lucro >= 0 ? 'positive' : 'negative'}`}>
-                            {stats.lucro >= 0 ? 'Lucro' : 'Prejuízo'}
+                {/* Lucro */}
+                <div className="kpi-card lucro">
+                    <div className="kpi-header">
+                        <span className="kpi-icon">📈</span>
+                        <span className={`kpi-trend ${stats.lucro >= 0 ? 'trend-up' : 'trend-down'}`}>
+                            {stats.lucro >= 0 ? '↗ Positivo' : '↘ Atenção'}
                         </span>
                     </div>
-                </div>
-
-                <div className="stat-card premium-card">
-                    <div className="stat-icon expense-icon">💸</div>
-                    <div className="stat-info">
-                        <h3>Despesas Operacionais</h3>
-                        <p className="stat-value text-danger">R$ {stats.pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        <span className="stat-trend">Total Gasto</span>
+                    <div>
+                        <div className="kpi-value" style={{ color: stats.lucro >= 0 ? '#10b981' : '#ef4444' }}>
+                            R$ {stats.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="kpi-title">Lucro Líquido</div>
                     </div>
                 </div>
 
-                <div className="stat-card premium-card">
-                    <div className="stat-icon" style={{ background: '#e0f2fe', color: '#0ea5e9' }}>💰</div>
-                    <div className="stat-info">
-                        <h3>A Receber</h3>
-                        <p className="stat-value">R$ {stats.receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        <span className="stat-trend" style={{ color: '#0ea5e9' }}>Vendas Pendentes</span>
+                {/* Despesas */}
+                <div className="kpi-card despesa">
+                    <div className="kpi-header">
+                        <span className="kpi-icon">💸</span>
+                        <span className="kpi-trend trend-neutral">➡ Estável</span>
+                    </div>
+                    <div>
+                        <div className="kpi-value text-danger">R$ {stats.pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div className="kpi-title">Despesas Operacionais</div>
+                    </div>
+                </div>
+
+                {/* A Receber */}
+                <div className="kpi-card receber">
+                    <div className="kpi-header">
+                        <span className="kpi-icon">📝</span>
+                        <span className="kpi-trend trend-up">↗ Pendente</span>
+                    </div>
+                    <div>
+                        <div className="kpi-value">R$ {stats.receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div className="kpi-title">Contas a Receber</div>
                     </div>
                 </div>
             </div>
 
-            {/* Charts Section */}
-            <div className="dashboard-content-grid">
-                <div className="chart-container premium-card main-chart">
-                    <h3>Fluxo de Receita (Diário)</h3>
-                    <div style={{ width: '100%', height: 250 }}>
-                        {chartData.length > 0 ? (
+            {/* Main Content Grid */}
+            <div className="bd-charts-section">
+                {/* Left Column: Main Charts */}
+                <div className="charts-column" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                    {/* Area Chart: Fluxo Diário */}
+                    <div className="chart-card">
+                        <div className="chart-header">
+                            <h3 className="chart-title">📊 Fluxo de Receita Diária</h3>
+                        </div>
+                        <div style={{ width: '100%', height: 300 }}>
+                            {chartData.length > 0 ? (
+                                <ResponsiveContainer>
+                                    <AreaChart data={chartData}>
+                                        <defs>
+                                            <linearGradient id="colorValor2" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                        <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                                        <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} tickFormatter={val => `R$${val / 1000}k`} />
+                                        <Tooltip
+                                            contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
+                                            formatter={(value) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Receita']}
+                                        />
+                                        <Area type="monotone" dataKey="valor" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorValor2)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="empty-state">
+                                    <span style={{ fontSize: '3rem', opacity: 0.5 }}>📉</span>
+                                    <p>Sem dados de receita para este período.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Area Chart: Projeção */}
+                    <div className="chart-card">
+                        <div className="chart-header">
+                            <h3 className="chart-title">🔮 Projeção de Fluxo (30 Dias)</h3>
+                        </div>
+                        <div style={{ width: '100%', height: 250 }}>
                             <ResponsiveContainer>
-                                <AreaChart data={chartData}>
+                                <AreaChart data={projectionData}>
                                     <defs>
-                                        <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                        <linearGradient id="colorProj2" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                    <XAxis dataKey="name" stroke="#94a3b8" />
-                                    <YAxis stroke="#94a3b8" />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#94a3b8" hide />
+                                    <YAxis stroke="#94a3b8" tickFormatter={val => `R$${val / 1000}k`} />
                                     <Tooltip
-                                        contentStyle={{ background: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px' }}
-                                        formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                        contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
+                                        formatter={(value) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Saldo Projetado']}
                                     />
-                                    <Area type="monotone" dataKey="valor" stroke="#6366f1" fillOpacity={1} fill="url(#colorValor)" />
+                                    <Area type="monotone" dataKey="saldo_projetado" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorProj2)" />
                                 </AreaChart>
                             </ResponsiveContainer>
-                        ) : (
-                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '2rem' }}>📉</span>
-                                <p>Sem movimentações neste mês.</p>
-                            </div>
-                        )}
-                    </div>
-
-                    <h3 style={{ marginTop: '2rem' }}>🔮 Projeção de Fluxo de Caixa (30 Dias)</h3>
-                    <div style={{ width: '100%', height: 250 }}>
-                        <ResponsiveContainer>
-                            <AreaChart data={projectionData}>
-                                <defs>
-                                    <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis dataKey="name" stroke="#94a3b8" />
-                                <YAxis stroke="#94a3b8" />
-                                <Tooltip
-                                    contentStyle={{ background: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px' }}
-                                    formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                                />
-                                <Area type="monotone" dataKey="saldo_projetado" stroke="#10b981" fillOpacity={1} fill="url(#colorProj)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="chart-container premium-card" style={{ marginTop: '1rem', minHeight: '350px' }}>
-                    <h3>Receita por Categoria</h3>
-                    <div style={{ width: '100%', height: 300 }}>
-                        {catData.length > 0 ? (
-                            <ResponsiveContainer>
-                                <PieChart>
-                                    <Pie
-                                        data={catData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {catData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                                    <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '2rem' }}>🍩</span>
-                                <p>Nenhuma receita registrada.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="side-panel premium-card">
-                    <h3>Atalhos Rápidos</h3>
-                    <div className="quick-actions-list">
-                        <button className="action-item" onClick={() => window.location.href = '/produtos'}>
-                            <span>📦</span> Gerenciar Estoque
-                        </button>
-                        <button className="action-item" onClick={() => window.location.href = '/clientes'}>
-                            <span>🤝</span> Base de Clientes
-                        </button>
-                        <button className="action-item" onClick={() => window.location.href = '/kanban'}>
-                            <span>📑</span> Quadro Kanban
-                        </button>
-                        <button className="action-item" onClick={() => window.location.href = '/funcionarios'}>
-                            <span>👥</span> Equipe
-                        </button>
-                    </div>
-
-                    <h3 style={{ marginTop: '2rem' }}>Status do Sistema</h3>
-                    <div className="server-status">
-                        <div className="status-item">
-                            <span className="status-dot online"></span>
-                            Banco de Dados Conectado
-                        </div>
-                        <div className="status-item">
-                            <span className="status-dot online"></span>
-                            API Operacional
                         </div>
                     </div>
+
+                </div>
+
+                {/* Right Column: Secondary Data & Actions */}
+                <div className="bd-sidebar">
+
+                    {/* Donut Chart: Categorias */}
+                    <div className="chart-card">
+                        <div className="chart-header">
+                            <h3 className="chart-title">🍩 Top Categorias</h3>
+                        </div>
+                        <div style={{ width: '100%', height: 300 }}>
+                            {catData.length > 0 ? (
+                                <ResponsiveContainer>
+                                    <PieChart>
+                                        <Pie
+                                            data={catData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={90}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {catData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{ background: '#1e293b', border: 'no', borderRadius: '8px', color: '#fff' }}
+                                            formatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
+                                        />
+                                        <Legend verticalAlign="bottom" align="center" iconType="circle" />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="empty-state" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '2rem', opacity: 0.5 }}>🍩</span>
+                                    <p style={{ color: '#94a3b8', marginTop: '1rem' }}>Sem dados.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Quick Actions Panel */}
+                    <div className="chart-card">
+                        <h3 className="chart-title" style={{ marginBottom: '1rem' }}>⚡ Acesso Rápido</h3>
+                        <div className="actions-grid">
+                            <div className="action-btn" onClick={() => window.location.href = '/produtos'}>
+                                <span className="action-icon">📦</span>
+                                <span className="action-label">Estoque</span>
+                            </div>
+                            <div className="action-btn" onClick={() => window.location.href = '/clientes'}>
+                                <span className="action-icon">🤝</span>
+                                <span className="action-label">Clientes</span>
+                            </div>
+                            <div className="action-btn" onClick={() => window.location.href = '/kanban'}>
+                                <span className="action-icon">📑</span>
+                                <span className="action-label">Projetos</span>
+                            </div>
+                            <div className="action-btn" onClick={() => window.location.href = '/funcionarios'}>
+                                <span className="action-icon">👥</span>
+                                <span className="action-label">Equipe</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* System Status */}
+                    <div className="chart-card">
+                        <h3 className="chart-title" style={{ marginBottom: '1rem' }}>🖥 Status</h3>
+                        <div className="status-list">
+                            <div className="status-item">
+                                <span className="status-indicator online"></span>
+                                Banco de Dados
+                            </div>
+                            <div className="status-item">
+                                <span className="status-indicator online"></span>
+                                API Integrada
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
