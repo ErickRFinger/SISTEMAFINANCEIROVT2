@@ -1,5 +1,14 @@
 import supabase from '../database/db.js';
 
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+console.log('--- DIAGNÓSTICO DE CREDENCIAIS ---');
+console.log('URL Configurad:', supabaseUrl);
+console.log('KEY Configurada (Início):', supabaseKey ? supabaseKey.substring(0, 15) + '...' : 'NÃO DEFINIDA');
+console.log('KEY Comprimento:', supabaseKey ? supabaseKey.length : 0);
+console.log('----------------------------------');
+
 async function testConnection() {
     console.log('--- TESTE DE CONEXÃO E TABELAS ---');
 
