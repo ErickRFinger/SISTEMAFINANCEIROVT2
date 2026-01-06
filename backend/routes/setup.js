@@ -200,6 +200,12 @@ router.get('/erp-update', async (req, res) => {
         IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_vendas_data') THEN
             CREATE INDEX idx_vendas_data ON public.vendas(data_venda);
         END IF;
+
+        -- 3. Adicionar is_recorrente em transacoes
+        BEGIN
+            ALTER TABLE public.transacoes ADD COLUMN is_recorrente BOOLEAN DEFAULT FALSE;
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
     END
     $$;
     `;
@@ -221,6 +227,33 @@ router.get('/erp-update', async (req, res) => {
     } catch (error) {
         console.error('❌ Erro fatal setup:', error);
         res.status(500).send('Erro interno no setup: ' + error.message);
+    }
+});
+
+router.get('/upgrade-user', async (req, res) => {
+    const email = req.query.email || 'erick.finger123@gmail.com';
+    const type = req.query.type || 'hibrido';
+
+    console.log(`🔄 [SETUP] Atualizando usuário ${email} para tipo ${type}...`);
+
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update({ tipo_conta: type })
+            .eq('email', email)
+            .select();
+
+        if (error) throw error;
+
+        if (data.length === 0) {
+            return res.status(404).send(`<h1>❌ Usuário não encontrado</h1><p>O email ${email} não existe no banco.</p>`);
+        }
+
+        res.send(`<h1>✅ Conta Atualizada!</h1><p>O usuário <b>${email}</b> agora é <b>${type.toUpperCase()}</b> (Pessoal + Empresarial).</p><p>⚠️ Por favor, <b>faça logout e login novamente</b> para ver as mudanças.</p>`);
+
+    } catch (error) {
+        console.error('❌ Erro ao atualizar usuário:', error);
+        res.status(500).send('Erro interno: ' + error.message);
     }
 });
 
