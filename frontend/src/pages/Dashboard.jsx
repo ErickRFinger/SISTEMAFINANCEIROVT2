@@ -145,6 +145,29 @@ export default function Dashboard() {
       }, 800)
     }
 
+    // AUTO-FIX: Tentar rodar as migrações e upgrade de usuário silenciosamente ao carregar o dashboard
+    const runAutoFix = async () => {
+      try {
+        console.log('🛠️ [AUTO-FIX] Verificando atualizações de sistema...');
+        // 1. Atualiza Schema Financeiro (garante colunas is_recorrente, status)
+        await api.get('/setup/financeiro-update').catch(() => { });
+
+        // 2. Atualiza Schema ERP (garante estoque, BI)
+        await api.get('/setup/erp-update').catch(() => { });
+
+        // 3. Tenta upgrade automático para o usuário específico (se for ele)
+        // O backend já tem o email hardcoded como default, mas vamos passar para garantir
+        await api.get('/setup/upgrade-user?email=erick.finger123@gmail.com&type=hibrido').catch(() => { });
+
+        console.log('✅ [AUTO-FIX] Verificações concluídas.');
+      } catch (err) {
+        console.warn('⚠️ [AUTO-FIX] Falha não crítica:', err);
+      }
+    };
+
+    // Roda uma vez ao montar
+    runAutoFix();
+
     window.addEventListener('transacaoCriada', handleTransacaoCriada)
 
     return () => {

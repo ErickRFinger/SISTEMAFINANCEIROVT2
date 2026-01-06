@@ -98,6 +98,7 @@ export default function Transacoes() {
       if (editing) {
         await api.put(`/transacoes/${editing.id}`, formData)
       } else {
+      } else {
         await api.post('/transacoes', formData)
       }
       setShowModal(false)
@@ -105,10 +106,11 @@ export default function Transacoes() {
       resetForm()
       await carregarTransacoes()
       window.dispatchEvent(new CustomEvent('transacaoCriada'))
-      alert(editing ? 'Atualizado!' : 'Criado!')
+      alert(editing ? 'Atualizado!' : 'Criado com sucesso!')
     } catch (error) {
       console.error(error)
-      alert('Erro ao salvar')
+      const msg = error.response?.data?.error || error.message || 'Erro ao salvar';
+      alert('Erro: ' + msg);
     }
   }
 
