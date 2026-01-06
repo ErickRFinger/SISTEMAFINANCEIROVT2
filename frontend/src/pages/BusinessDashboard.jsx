@@ -194,24 +194,31 @@ export default function BusinessDashboard() {
                 <div className="chart-container premium-card main-chart">
                     <h3>Fluxo de Receita (Diário)</h3>
                     <div style={{ width: '100%', height: 250 }}>
-                        <ResponsiveContainer>
-                            <AreaChart data={chartData}>
-                                <defs>
-                                    <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis dataKey="name" stroke="#94a3b8" />
-                                <YAxis stroke="#94a3b8" />
-                                <Tooltip
-                                    contentStyle={{ background: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px' }}
-                                    formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                                />
-                                <Area type="monotone" dataKey="valor" stroke="#6366f1" fillOpacity={1} fill="url(#colorValor)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {chartData.length > 0 ? (
+                            <ResponsiveContainer>
+                                <AreaChart data={chartData}>
+                                    <defs>
+                                        <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                    <XAxis dataKey="name" stroke="#94a3b8" />
+                                    <YAxis stroke="#94a3b8" />
+                                    <Tooltip
+                                        contentStyle={{ background: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px' }}
+                                        formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                    />
+                                    <Area type="monotone" dataKey="valor" stroke="#6366f1" fillOpacity={1} fill="url(#colorValor)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '2rem' }}>📉</span>
+                                <p>Sem movimentações neste mês.</p>
+                            </div>
+                        )}
                     </div>
 
                     <h3 style={{ marginTop: '2rem' }}>🔮 Projeção de Fluxo de Caixa (30 Dias)</h3>
@@ -240,25 +247,32 @@ export default function BusinessDashboard() {
                 <div className="chart-container premium-card" style={{ marginTop: '1rem', minHeight: '350px' }}>
                     <h3>Receita por Categoria</h3>
                     <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer>
-                            <PieChart>
-                                <Pie
-                                    data={catData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {catData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                                <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        {catData.length > 0 ? (
+                            <ResponsiveContainer>
+                                <PieChart>
+                                    <Pie
+                                        data={catData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {catData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                                    <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '2rem' }}>🍩</span>
+                                <p>Nenhuma receita registrada.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
