@@ -9,6 +9,8 @@ const router = express.Router();
 // GET /api/kanban/columns - List Columns with Cards
 router.get('/columns', authenticateToken, async (req, res) => {
     try {
+        console.log(`[KANBAN] Buscando dados para user: ${req.user.userId}`);
+
         // 1. Fetch Columns
         const { data: columns, error: colError } = await supabase
             .from('kanban_colunas')
@@ -16,9 +18,13 @@ router.get('/columns', authenticateToken, async (req, res) => {
             .eq('user_id', req.user.userId)
             .order('ordem', { ascending: true });
 
-        if (colError) throw colError;
+        if (colError) {
+            console.error('[KANBAN] Erro colunas:', colError);
+            throw colError;
+        }
 
         // 2. Fetch Cards for all columns
+        // NOTE: Verificando se o user_id está sendo passado corretamente
         const { data: cards, error: cardError } = await supabase
             .from('kanban_cards')
             .select(`
@@ -29,7 +35,12 @@ router.get('/columns', authenticateToken, async (req, res) => {
             .eq('user_id', req.user.userId)
             .order('posicao', { ascending: true });
 
-        if (cardError) throw cardError;
+        if (cardError) {
+            console.error('[KANBAN] Erro cards:', cardError);
+            throw cardError;
+        }
+
+        console.log(`[KANBAN] Encontrados ${columns?.length} colunas e ${cards?.length} cards.`);
 
         // 3. Structure data: Column -> Cards[]
         const boardData = columns.map(col => ({
