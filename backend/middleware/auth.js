@@ -5,8 +5,6 @@ export const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   console.log(`🔐 [AUTH] ${req.method} ${req.originalUrl || req.path}`);
-  console.log(`   Token presente: ${!!token}`);
-  console.log(`   JWT_SECRET configurado: ${!!process.env.JWT_SECRET}`);
 
   if (!token) {
     console.error('❌ [AUTH] Token não fornecido');
@@ -23,9 +21,8 @@ export const authenticateToken = (req, res, next) => {
       console.error('❌ [AUTH] Token inválido:', err.message);
       return res.status(403).json({ error: 'Token inválido ou expirado' });
     }
-    console.log('✅ [AUTH] Token válido para usuário:', user.userId);
+    console.log(`✅ [AUTH] Token valido para usuario: ${user.userId}`);
     req.user = user;
     next();
   });
 };
-

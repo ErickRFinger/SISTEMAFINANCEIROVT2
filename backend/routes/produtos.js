@@ -35,10 +35,10 @@ router.post('/', authenticateToken, async (req, res) => {
         const {
             nome,
             descricao,
-            preco_venda, // VALOR
+            preco_venda,
             preco_custo,
             quantidade_estoque,
-            tipo_item, // 'produto' or 'servico'
+            tipo_item,
             localizacao,
             margem_lucro
         } = req.body;
