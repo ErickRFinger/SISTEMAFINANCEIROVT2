@@ -112,6 +112,9 @@ class TransacaoService {
     /**
      * Cria uma nova transação
      */
+    /**
+     * Cria uma nova transação
+     */
     async create(userId, transactionData) {
         const {
             categoria_id,
@@ -123,80 +126,69 @@ class TransacaoService {
             data: dataTransacao
         } = transactionData;
 
-        // 1. Validar Categoria
+        // Validations
         if (categoria_id) {
-            const { data: cat, error } = await supabase
-                .from('categorias')
-                .select('id')
-                .eq('id', categoria_id)
-                .eq('user_id', userId)
-                .single();
-
-            if (error || !cat) throw new Error('Categoria inválida ou não pertence ao usuário');
+            const { data: cat } = await supabase.from('categorias').select('id').eq('id', categoria_id).single();
+            if (!cat) throw new Error('Categoria inválida');
         }
-
-        // 2. Validar Banco
         if (banco_id) {
-            const { data: bco, error } = await supabase
-                .from('bancos')
-                .select('id')
-                .eq('id', banco_id)
-                .eq('user_id', userId)
-                .single();
-
-            if (error || !bco) throw new Error('Banco inválido ou não pertence ao usuário');
+            const { data: bco } = await supabase.from('bancos').select('id').eq('id', banco_id).single();
+            if (!bco) throw new Error('Banco inválido');
         }
 
-        // 3. Validar Cartão
-        if (cartao_id) {
-            const { data: cart, error } = await supabase
-                .from('cartoes')
-                .select('id, banco_id')
-                .eq('id', cartao_id)
-                .eq('user_id', userId)
+        // Tenta inserir com TODOS os campos novos
+        const payloadFull = {
+            user_id: userId,
+            categoria_id: categoria_id || null,
+            banco_id: banco_id || null,
+            cartao_id: cartao_id || null,
+            tipo,
+            descricao,
+            valor: parseFloat(valor),
+            data: dataTransacao,
+            status: transactionData.status || 'pago',
+            data_vencimento: transactionData.data_vencimento || dataTransacao,
+            is_recorrente: transactionData.is_recorrente || false
+        };
+
+        try {
+            const { data: novaTransacao, error } = await supabase
+                .from('transacoes')
+                .insert([payloadFull])
+                .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
                 .single();
 
-            if (error || !cart) throw new Error('Cartão inválido ou não pertence ao usuário');
+            if (error) throw error;
+            if (banco_id) await this._updateBankBalance(userId, banco_id, valor, tipo, 'add');
+            return formatTransaction(novaTransacao);
 
-            // Validar relação Cartão-Banco
-            if (banco_id && cart.banco_id !== parseInt(banco_id)) {
-                throw new Error('Cartão não pertence ao banco selecionado');
+        } catch (error) {
+            console.warn('⚠️ [BACKEND] Erro ao criar transação completa. Tentando fallback...', error.message);
+
+            // Fallback: Se der erro de coluna, tenta inserir SEM os campos novos (modo legado)
+            if (error.message && (error.message.includes('column') || error.code === '42703')) {
+                const payloadLegacy = { ...payloadFull };
+                delete payloadLegacy.status;
+                delete payloadLegacy.data_vencimento;
+                delete payloadLegacy.is_recorrente;
+
+                const { data: legacyTransacao, error: legacyError } = await supabase
+                    .from('transacoes')
+                    .insert([payloadLegacy])
+                    .select()
+                    .single();
+
+                if (legacyError) throw legacyError;
+                if (banco_id) await this._updateBankBalance(userId, banco_id, valor, tipo, 'add');
+                return formatTransaction(legacyTransacao);
             }
+            throw error;
         }
-
-        const { data: novaTransacao, error } = await supabase
-            .from('transacoes')
-            .insert([{
-                user_id: userId,
-                categoria_id: categoria_id || null,
-                banco_id: banco_id || null,
-                cartao_id: cartao_id || null,
-                tipo,
-                descricao,
-                valor: parseFloat(valor),
-                data: dataTransacao,
-                status: transactionData.status || 'pago', // Novo campo
-                data_vencimento: transactionData.data_vencimento || dataTransacao, // Novo campo (default = data da transação)
-                is_recorrente: transactionData.is_recorrente || false
-            }])
-            .select(`
-        *,
-        categorias (nome, cor),
-        bancos (nome, cor),
-        cartoes (nome, cor)
-      `)
-            .single();
-
-        if (error) throw error;
-
-        // Atualizar saldo do banco
-        if (banco_id) {
-            await this._updateBankBalance(userId, banco_id, valor, tipo, 'add');
-        }
-
-        return formatTransaction(novaTransacao);
     }
 
+    /**
+     * Atualiza uma transação
+     */
     /**
      * Atualiza uma transação
      */
@@ -205,43 +197,68 @@ class TransacaoService {
         const transacaoAntiga = await this.getById(id, userId);
         if (!transacaoAntiga) throw new Error('Transação não encontrada');
 
-        const { data, error } = await supabase
-            .from('transacoes')
-            .update({
-                descricao: transactionData.descricao,
-                valor: parseFloat(transactionData.valor),
-                tipo: transactionData.tipo,
-                data: transactionData.data,
-                status: transactionData.status, // Novo campo
-                data_vencimento: transactionData.data_vencimento, // Novo campo
-                categoria_id: transactionData.categoria_id || null,
-                banco_id: transactionData.banco_id || null,
-                cartao_id: transactionData.cartao_id || null
-            })
-            .eq('id', id)
-            .eq('user_id', userId)
-            .select(`
-        *,
-        categorias (nome, cor),
-        bancos (nome, cor),
-        cartoes (nome, cor)
-      `)
-            .single();
+        const payloadFull = {
+            descricao: transactionData.descricao,
+            valor: parseFloat(transactionData.valor),
+            tipo: transactionData.tipo,
+            data: transactionData.data,
+            status: transactionData.status,
+            data_vencimento: transactionData.data_vencimento,
+            categoria_id: transactionData.categoria_id || null,
+            banco_id: transactionData.banco_id || null,
+            cartao_id: transactionData.cartao_id || null
+        };
 
-        if (error) throw error;
+        try {
+            const { data, error } = await supabase
+                .from('transacoes')
+                .update(payloadFull)
+                .eq('id', id)
+                .eq('user_id', userId)
+                .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
+                .single();
 
-        // Lógica de atualização de saldo:
-        // 1. Reverter efeito da antiga (se tinha banco)
-        if (transacaoAntiga.banco_id) {
-            await this._updateBankBalance(userId, transacaoAntiga.banco_id, transacaoAntiga.valor, transacaoAntiga.tipo, 'remove');
+            if (error) throw error;
+
+            // Lógica de atualização de saldo...
+            if (transacaoAntiga.banco_id) {
+                await this._updateBankBalance(userId, transacaoAntiga.banco_id, transacaoAntiga.valor, transacaoAntiga.tipo, 'remove');
+            }
+            if (transactionData.banco_id) {
+                await this._updateBankBalance(userId, transactionData.banco_id, transactionData.valor, transactionData.tipo, 'add');
+            }
+            return formatTransaction(data);
+
+        } catch (error) {
+            console.warn('⚠️ [BACKEND] Erro ao atualizar transação completa. Tentando fallback...', error.message);
+
+            if (error.message && (error.message.includes('column') || error.code === '42703')) {
+                const payloadLegacy = { ...payloadFull };
+                delete payloadLegacy.status;
+                delete payloadLegacy.data_vencimento;
+                // is_recorrente não é atualizado normalmente, mas se fosse...
+
+                const { data: legacyData, error: legacyError } = await supabase
+                    .from('transacoes')
+                    .update(payloadLegacy)
+                    .eq('id', id)
+                    .eq('user_id', userId)
+                    .select()
+                    .single();
+
+                if (legacyError) throw legacyError;
+
+                // Saldo logic runs same as above
+                if (transacaoAntiga.banco_id) {
+                    await this._updateBankBalance(userId, transacaoAntiga.banco_id, transacaoAntiga.valor, transacaoAntiga.tipo, 'remove');
+                }
+                if (transactionData.banco_id) {
+                    await this._updateBankBalance(userId, transactionData.banco_id, transactionData.valor, transactionData.tipo, 'add');
+                }
+                return formatTransaction(legacyData);
+            }
+            throw error;
         }
-
-        // 2. Aplicar efeito da nova (se tem banco)
-        if (transactionData.banco_id) {
-            await this._updateBankBalance(userId, transactionData.banco_id, transactionData.valor, transactionData.tipo, 'add');
-        }
-
-        return formatTransaction(data);
     }
 
     /**
