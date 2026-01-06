@@ -98,7 +98,6 @@ export default function Transacoes() {
       if (editing) {
         await api.put(`/transacoes/${editing.id}`, formData)
       } else {
-      } else {
         await api.post('/transacoes', formData)
       }
       setShowModal(false)
