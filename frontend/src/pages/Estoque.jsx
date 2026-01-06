@@ -107,12 +107,46 @@ export default function Estoque() {
             <div className="page-header">
                 <div>
                     <h1>📦 Estoque de Produtos</h1>
-                    <p>Controle de inventário físico.</p>
+                    <p>Controle de inventário físico e valuation.</p>
                 </div>
                 <button className="btn-primary" onClick={() => openModal()}>
                     + Novo Produto
                 </button>
             </div>
+
+            {/* TOTALS SUMMARY */}
+            {!loading && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div className="funcionario-card" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>🏭</span>
+                            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Valor de Custo (Ativo)</span>
+                        </div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                            R$ {produtos.reduce((acc, item) => acc + (Number(item.preco_custo || 0) * Number(item.quantidade_estoque || 0)), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+
+                    <div className="funcionario-card" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>💰</span>
+                            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Potencial de Venda</span>
+                        </div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#34d399' }}>
+                            R$ {produtos.reduce((acc, item) => acc + (Number(item.preco_venda || 0) * Number(item.quantidade_estoque || 0)), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div className="funcionario-card" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>📦</span>
+                            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Itens em Estoque</span>
+                        </div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                            {produtos.reduce((acc, item) => acc + Number(item.quantidade_estoque || 0), 0)} <span style={{ fontSize: '1rem', fontWeight: 'normal' }}>unid.</span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <div className="loading">Carregando estoque...</div>
