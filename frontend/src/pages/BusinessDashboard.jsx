@@ -22,6 +22,7 @@ export default function BusinessDashboard() {
         lucro: 0
     })
     const [chartData, setChartData] = useState([])
+    const [projectionData, setProjectionData] = useState([]) // New State for Projection
 
     // Date State
     const hoje = new Date()
@@ -36,19 +37,28 @@ export default function BusinessDashboard() {
 
             // 1. Fetch Resumo Financeiro (Same as Personal)
             // Maps: Receitas -> Faturamento, Despesas -> A Pagar, Saldo -> Lucro
-            const resumoRes = await api.get('/transacoes/resumo/saldo', { params: mesAno })
+            // 1. Fetch Resumo Financeiro
+            const [resumoRes, receivablesRes, transacoesRes, projRes] = await Promise.all([
+                api.get('/transacoes/resumo/saldo', { params: mesAno }),
+                api.get('/transacoes/resumo/receber'),
+                api.get('/transacoes', { params: mesAno }),
+                api.get('/transacoes/projecao?dias=30')
+            ])
+
             const resumo = resumoRes.data || { receitas: 0, despesas: 0, saldo: 0 }
+            const receivables = receivablesRes.data || { total: 0 }
 
             setStats({
                 faturamento: Number(resumo.receitas),
-                receber: 0, // Not implemented in backend yet
+                receber: Number(receivables.total),
                 pagar: Number(resumo.despesas),
                 lucro: Number(resumo.saldo)
             })
 
-            // 2. Fetch Transactions for Chart
-            const transacoesRes = await api.get('/transacoes', { params: mesAno })
             const transacoes = Array.isArray(transacoesRes.data) ? transacoesRes.data : []
+
+            // Process Projection Data
+            setProjectionData(projRes.data || [])
 
             // Process Chart Data (Group by Day)
             const dailyData = transacoes.reduce((acc, t) => {
@@ -138,12 +148,12 @@ export default function BusinessDashboard() {
                     </div>
                 </div>
 
-                <div className="stat-card premium-card" style={{ opacity: 0.7 }}>
-                    <div className="stat-icon" style={{ background: '#e5e7eb', color: '#6b7280' }}>🔒</div>
+                <div className="stat-card premium-card">
+                    <div className="stat-icon" style={{ background: '#e0f2fe', color: '#0ea5e9' }}>💰</div>
                     <div className="stat-info">
                         <h3>A Receber</h3>
-                        <p className="stat-value" style={{ fontSize: '1.2rem', color: '#6b7280' }}>Em Breve</p>
-                        <span className="stat-trend">Funcionalidade futura</span>
+                        <p className="stat-value">R$ {stats.receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        <span className="stat-trend" style={{ color: '#0ea5e9' }}>Vendas Pendentes</span>
                     </div>
                 </div>
             </div>
@@ -152,7 +162,7 @@ export default function BusinessDashboard() {
             <div className="dashboard-content-grid">
                 <div className="chart-container premium-card main-chart">
                     <h3>Fluxo de Receita (Diário)</h3>
-                    <div style={{ width: '100%', height: 300 }}>
+                    <div style={{ width: '100%', height: 250 }}>
                         <ResponsiveContainer>
                             <AreaChart data={chartData}>
                                 <defs>
@@ -171,11 +181,28 @@ export default function BusinessDashboard() {
                                 <Area type="monotone" dataKey="valor" stroke="#6366f1" fillOpacity={1} fill="url(#colorValor)" />
                             </AreaChart>
                         </ResponsiveContainer>
-                        {chartData.length === 0 && (
-                            <div style={{ textAlign: 'center', color: '#888', marginTop: '-150px' }}>
-                                Sem dados de receita para este mês.
-                            </div>
-                        )}
+                    </div>
+
+                    <h3 style={{ marginTop: '2rem' }}>🔮 Projeção de Fluxo de Caixa (30 Dias)</h3>
+                    <div style={{ width: '100%', height: 250 }}>
+                        <ResponsiveContainer>
+                            <AreaChart data={projectionData}>
+                                <defs>
+                                    <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="name" stroke="#94a3b8" />
+                                <YAxis stroke="#94a3b8" />
+                                <Tooltip
+                                    contentStyle={{ background: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px' }}
+                                    formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                />
+                                <Area type="monotone" dataKey="saldo_projetado" stroke="#10b981" fillOpacity={1} fill="url(#colorProj)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 

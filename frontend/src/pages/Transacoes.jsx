@@ -32,6 +32,8 @@ export default function Transacoes() {
     categoria_id: '',
     banco_id: '',
     cartao_id: '',
+    status: 'pago', // Novo
+    data_vencimento: new Date().toISOString().split('T')[0], // Novo
     is_recorrente: false
   })
 
@@ -119,6 +121,8 @@ export default function Transacoes() {
       categoria_id: '',
       banco_id: '',
       cartao_id: '',
+      status: 'pago',
+      data_vencimento: new Date().toISOString().split('T')[0],
       is_recorrente: false
     })
   }
@@ -133,6 +137,8 @@ export default function Transacoes() {
       categoria_id: transacao.categoria_id || '',
       banco_id: transacao.banco_id || '',
       cartao_id: transacao.cartao_id || '',
+      status: transacao.status || 'pago',
+      data_vencimento: transacao.data_vencimento || transacao.data,
       is_recorrente: transacao.is_recorrente || false
     })
     setShowModal(true)
@@ -298,6 +304,9 @@ export default function Transacoes() {
                     <div className={`t-amount ${t.tipo}`}>
                       {t.tipo === 'receita' ? '+' : '-'} {formatarMoeda(t.valor)}
                     </div>
+                    {t.status === 'pendente' && (
+                      <span style={{ fontSize: '0.8rem', color: '#f59e0b', display: 'block' }}>⏳ Pendente</span>
+                    )}
                   </div>
                   <div className="t-actions">
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(t.id) }} className="btn-icon delete-btn">🗑️</button>
@@ -332,6 +341,21 @@ export default function Transacoes() {
                   </select>
                 </div>
               </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+                    <option value="pago">✅ Pago / Recebido</option>
+                    <option value="pendente">⏳ Pendente / A Receber</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Vencimento</label>
+                  <input type="date" value={formData.data_vencimento} onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })} />
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Categoria</label>
                 <select value={formData.categoria_id} onChange={(e) => setFormData({ ...formData, categoria_id: e.target.value })}>
@@ -395,8 +419,9 @@ export default function Transacoes() {
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div >
+      )
+      }
 
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -407,6 +432,6 @@ export default function Transacoes() {
         confirmText="Excluir"
         isDangerous={true}
       />
-    </div>
+    </div >
   )
 }
