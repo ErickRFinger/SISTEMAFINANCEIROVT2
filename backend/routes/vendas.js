@@ -113,6 +113,9 @@ router.post('/', authenticateToken, async (req, res) => {
             valor: valorFinal,
             tipo: 'receita',
             data: new Date().toISOString().split('T')[0], // Hoje
+            status: 'pago', // Vendas PDV são consideradas pagas
+            data_vencimento: new Date().toISOString().split('T')[0], // Vence hoje
+            is_recorrente: false,
             // Tenta achar categoria 'Vendas', senão null
             // (Para ficar perfeito precisaria buscar o ID da categoria, mas vamos deixar null por enquanto ou criar default)
         }]);
