@@ -134,6 +134,7 @@ export default function Demandas() {
                     <p>Fluxo de trabalho visual (Kanban)</p>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="btn-secondary" onClick={fetchKanban} title="Recarregar quadro">🔄</button>
                     <button className={`btn-secondary ${viewMode === 'list' && 'active'}`} onClick={() => setViewMode('list')}>Lista</button>
                     <button className={`btn-secondary ${viewMode === 'kanban' && 'active'}`} onClick={() => setViewMode('kanban')}>Quadro</button>
                     <button className="btn-primary" onClick={() => openModal()}>+ Demanda</button>

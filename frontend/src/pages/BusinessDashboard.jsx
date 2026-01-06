@@ -9,7 +9,11 @@ import {
     Tooltip,
     ResponsiveContainer,
     AreaChart,
-    Area
+    Area,
+    PieChart,
+    Pie,
+    Cell,
+    Legend
 } from 'recharts'
 import './Dashboard.css' // Reutilizar estilos premium
 
@@ -22,7 +26,8 @@ export default function BusinessDashboard() {
         lucro: 0
     })
     const [chartData, setChartData] = useState([])
-    const [projectionData, setProjectionData] = useState([]) // New State for Projection
+    const [projectionData, setProjectionData] = useState([])
+    const [catData, setCatData] = useState([])
 
     // Date State
     const hoje = new Date()
@@ -32,36 +37,37 @@ export default function BusinessDashboard() {
     })
 
     const fetchBusinessData = useCallback(async () => {
+        setLoading(true)
+
+        // Wrapper to catch individual failures
+        const safeFetch = (promise, fallback) => promise.then(res => res.data).catch(err => {
+            console.warn('Falha parcial no dashboard:', err.message);
+            return fallback;
+        });
+
         try {
-            setLoading(true)
-
-            // 1. Fetch Resumo Financeiro (Same as Personal)
-            // Maps: Receitas -> Faturamento, Despesas -> A Pagar, Saldo -> Lucro
-            // 1. Fetch Resumo Financeiro
-            const [resumoRes, receivablesRes, transacoesRes, projRes] = await Promise.all([
-                api.get('/transacoes/resumo/saldo', { params: mesAno }),
-                api.get('/transacoes/resumo/receber'),
-                api.get('/transacoes', { params: mesAno }),
-                api.get('/transacoes/projecao?dias=30')
-            ])
-
-            const resumo = resumoRes.data || { receitas: 0, despesas: 0, saldo: 0 }
-            const receivables = receivablesRes.data || { total: 0 }
+            const [resumo, receivables, transacoes, projecao, categorias] = await Promise.all([
+                safeFetch(api.get('/transacoes/resumo/saldo', { params: mesAno }), { receitas: 0, despesas: 0, saldo: 0 }),
+                safeFetch(api.get('/transacoes/resumo/receber'), { total: 0 }),
+                safeFetch(api.get('/transacoes', { params: mesAno }), []),
+                safeFetch(api.get('/transacoes/projecao?dias=30'), []),
+                // New: Category Data (Mocked for now or fetched if endpoint exists)
+                // safeFetch(api.get('/analytics/categorias'), []) 
+                // We will derive category data from transacoes locally for now to save endpoints
+            ]);
 
             setStats({
-                faturamento: Number(resumo.receitas),
-                receber: Number(receivables.total),
-                pagar: Number(resumo.despesas),
-                lucro: Number(resumo.saldo)
+                faturamento: Number(resumo.receitas || 0),
+                receber: Number(receivables.total || 0),
+                pagar: Number(resumo.despesas || 0),
+                lucro: Number(resumo.saldo || 0)
             })
 
-            const transacoes = Array.isArray(transacoesRes.data) ? transacoesRes.data : []
+            const txList = Array.isArray(transacoes) ? transacoes : []
+            setProjectionData(Array.isArray(projecao) ? projecao : [])
 
-            // Process Projection Data
-            setProjectionData(projRes.data || [])
-
-            // Process Chart Data (Group by Day)
-            const dailyData = transacoes.reduce((acc, t) => {
+            // Chart 1: Daily Flow
+            const dailyData = txList.reduce((acc, t) => {
                 if (t.tipo === 'receita') {
                     const dia = new Date(t.data).getDate()
                     acc[dia] = (acc[dia] || 0) + Number(t.valor)
@@ -69,7 +75,6 @@ export default function BusinessDashboard() {
                 return acc
             }, {})
 
-            // Format for Recharts
             const formattedChartData = Object.keys(dailyData).map(dia => ({
                 name: `Dia ${dia}`,
                 valor: dailyData[dia]
@@ -78,11 +83,26 @@ export default function BusinessDashboard() {
                 const diaB = parseInt(b.name.split(' ')[1])
                 return diaA - diaB
             })
-
             setChartData(formattedChartData)
 
+            // New: Category Chart Logic
+            const catGroup = txList
+                .filter(t => t.tipo === 'receita')
+                .reduce((acc, t) => {
+                    const catName = t.categorias?.nome || 'Outros'
+                    acc[catName] = (acc[catName] || 0) + Number(t.valor)
+                    return acc
+                }, {})
+
+            const formattedCatData = Object.keys(catGroup).map((key, index) => ({
+                name: key,
+                value: catGroup[key],
+                color: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#ec4899'][index % 5]
+            }))
+            setCatData(formattedCatData)
+
         } catch (error) {
-            console.error('Erro ao buscar dados empresariais:', error)
+            console.error('Erro crítico no dashboard:', error)
         } finally {
             setLoading(false)
         }
@@ -91,11 +111,9 @@ export default function BusinessDashboard() {
     useEffect(() => {
         fetchBusinessData()
 
-        // Refresh on Focus (Volta de outra aba)
         const handleFocus = () => fetchBusinessData()
         window.addEventListener('focus', handleFocus)
 
-        // Refresh on Event (Transação criada em modal ou outra parte)
         const handleEvent = () => setTimeout(fetchBusinessData, 500)
         window.addEventListener('transacaoCriada', handleEvent)
 
@@ -215,6 +233,31 @@ export default function BusinessDashboard() {
                                 />
                                 <Area type="monotone" dataKey="saldo_projetado" stroke="#10b981" fillOpacity={1} fill="url(#colorProj)" />
                             </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                <div className="chart-container premium-card" style={{ marginTop: '1rem', minHeight: '350px' }}>
+                    <h3>Receita por Categoria</h3>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <PieChart>
+                                <Pie
+                                    data={catData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {catData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                                <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
+                            </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
