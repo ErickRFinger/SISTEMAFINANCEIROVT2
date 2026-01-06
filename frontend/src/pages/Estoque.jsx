@@ -53,7 +53,8 @@ export default function Estoque() {
             resetForm()
         } catch (error) {
             console.error('Erro ao salvar produto:', error)
-            alert('Erro ao salvar produto.')
+            const errorMsg = error.response?.data?.error || error.response?.data || error.message || 'Erro desconhecido ao salvar.';
+            alert(`Erro ao salvar: ${typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg}`);
         }
     }
 
