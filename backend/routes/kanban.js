@@ -88,7 +88,7 @@ router.post('/setup', authenticateToken, async (req, res) => {
 // POST /api/kanban/cards - Create Card
 router.post('/cards', authenticateToken, async (req, res) => {
     try {
-        const { coluna_id, titulo, descricao, prioridade, dificuldade, responsavel_id, cliente_id, data_limite, horas_estimadas } = req.body;
+        const { coluna_id, titulo, descricao, prioridade, dificuldade, responsavel_id, cliente_id, data_limite, horas_estimadas, valor, tipo_movimento } = req.body;
 
         const { data, error } = await supabase
             .from('kanban_cards')
@@ -102,7 +102,9 @@ router.post('/cards', authenticateToken, async (req, res) => {
                 responsavel_id,
                 cliente_id,
                 data_limite,
-                horas_estimadas
+                horas_estimadas,
+                valor: valor || 0,
+                tipo_movimento: tipo_movimento || 'saida'
             }])
             .select();
 
