@@ -90,6 +90,19 @@ export default function BusinessDashboard() {
 
     useEffect(() => {
         fetchBusinessData()
+
+        // Refresh on Focus (Volta de outra aba)
+        const handleFocus = () => fetchBusinessData()
+        window.addEventListener('focus', handleFocus)
+
+        // Refresh on Event (Transação criada em modal ou outra parte)
+        const handleEvent = () => setTimeout(fetchBusinessData, 500)
+        window.addEventListener('transacaoCriada', handleEvent)
+
+        return () => {
+            window.removeEventListener('focus', handleFocus)
+            window.removeEventListener('transacaoCriada', handleEvent)
+        }
     }, [fetchBusinessData])
 
     if (loading) return <div className="loading">Carregando Painel Empresarial...</div>

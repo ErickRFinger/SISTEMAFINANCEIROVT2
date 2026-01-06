@@ -148,20 +148,12 @@ export default function Dashboard() {
     // AUTO-FIX: Tentar rodar as migrações e upgrade de usuário silenciosamente ao carregar o dashboard
     const runAutoFix = async () => {
       try {
-        console.log('🛠️ [AUTO-FIX] Verificando atualizações de sistema...');
-        // 1. Atualiza Schema Financeiro (garante colunas is_recorrente, status)
-        await api.get('/setup/financeiro-update').catch(() => { });
-
-        // 2. Atualiza Schema ERP (garante estoque, BI)
-        await api.get('/setup/erp-update').catch(() => { });
-
-        // 3. Tenta upgrade automático para o usuário específico (se for ele)
-        // O backend já tem o email hardcoded como default, mas vamos passar para garantir
-        await api.get('/setup/upgrade-user?email=erick.finger123@gmail.com&type=hibrido').catch(() => { });
-
+        console.log('🛠️ [AUTO-FIX] Rodando reparo geral do sistema...');
+        // Chama a rota unificada que corrige DB e USER de uma vez
+        await api.get('/setup/fix-system?email=erick.finger123@gmail.com').catch(err => console.warn('Auto-fix warning:', err));
         console.log('✅ [AUTO-FIX] Verificações concluídas.');
       } catch (err) {
-        console.warn('⚠️ [AUTO-FIX] Falha não crítica:', err);
+        console.warn('⚠️ [AUTO-FIX] Falha:', err);
       }
     };
 
@@ -278,9 +270,14 @@ export default function Dashboard() {
             <strong>⚠️ Erro ao carregar dados</strong>
             <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>{error}</p>
           </div>
-          <button onClick={carregarDados} className="btn-secondary btn-sm">
-            🔄 Tentar Novamente
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => window.open(import.meta.env.VITE_API_URL + '/setup/fix-system', '_blank')} className="btn-primary btn-sm" style={{ backgroundColor: '#ef4444' }}>
+              🛠️ Corrigir Sistema
+            </button>
+            <button onClick={carregarDados} className="btn-secondary btn-sm">
+              🔄 Tentar Novamente
+            </button>
+          </div>
         </div>
       )}
 
