@@ -5,7 +5,7 @@ class TransacaoService {
     /**
      * Lista transações com filtros
      */
-    async list(userId, { mes, ano, tipo }) {
+    async list(userId, { mes, ano, tipo, status }) {
         let query = supabase
             .from('transacoes')
             .select(`
@@ -30,6 +30,10 @@ class TransacaoService {
 
         if (tipo) {
             query = query.eq('tipo', tipo);
+        }
+
+        if (status) {
+            query = query.eq('status', status);
         }
 
         const { data, error } = await query;
@@ -171,6 +175,8 @@ class TransacaoService {
                 descricao,
                 valor: parseFloat(valor),
                 data: dataTransacao,
+                status: transactionData.status || 'pago', // Novo campo
+                data_vencimento: transactionData.data_vencimento || dataTransacao, // Novo campo (default = data da transação)
                 is_recorrente: transactionData.is_recorrente || false
             }])
             .select(`
@@ -206,6 +212,8 @@ class TransacaoService {
                 valor: parseFloat(transactionData.valor),
                 tipo: transactionData.tipo,
                 data: transactionData.data,
+                status: transactionData.status, // Novo campo
+                data_vencimento: transactionData.data_vencimento, // Novo campo
                 categoria_id: transactionData.categoria_id || null,
                 banco_id: transactionData.banco_id || null,
                 cartao_id: transactionData.cartao_id || null
@@ -257,6 +265,86 @@ class TransacaoService {
         }
 
         return true;
+    }
+
+    /**
+     * Calcula o total a receber (receitas pendentes)
+     */
+    async getReceivables(userId) {
+        const { data, error } = await supabase
+            .from('transacoes')
+            .select('valor')
+            .eq('user_id', userId)
+            .eq('tipo', 'receita')
+            .eq('status', 'pendente');
+
+        if (error) throw error;
+
+        const total = data.reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
+        return { total: parseFloat(total.toFixed(2)) };
+    }
+
+    /**
+     * Gera projeção de fluxo de caixa para os próximos X dias
+     */
+    async getProjection(userId, days = 30) {
+        const today = new Date();
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + days);
+
+        const startDateStr = today.toISOString().split('T')[0];
+        const endDateStr = futureDate.toISOString().split('T')[0];
+
+        // Buscar transações futuras (vencimento >= hoje)
+        const { data, error } = await supabase
+            .from('transacoes')
+            .select('data_vencimento, valor, tipo, status')
+            .eq('user_id', userId)
+            .gte('data_vencimento', startDateStr)
+            .lte('data_vencimento', endDateStr)
+            .order('data_vencimento', { ascending: true });
+
+        if (error) throw error;
+
+        // Agrupar por dia
+        const dailyData = {};
+
+        // Inicializar dias com 0
+        for (let i = 0; i <= days; i++) {
+            const d = new Date();
+            d.setDate(today.getDate() + i);
+            const dateStr = d.toISOString().split('T')[0];
+            const diaMes = `${d.getDate()}/${d.getMonth() + 1}`;
+            dailyData[dateStr] = {
+                date: dateStr,
+                name: diaMes,
+                receitas: 0,
+                despesas: 0,
+                saldo_projetado: 0
+            };
+        }
+
+        // Preencher com dados reais
+        data.forEach(t => {
+            const dateStr = t.data_vencimento;
+            if (dailyData[dateStr]) {
+                const valor = Number(t.valor);
+                if (t.tipo === 'receita') {
+                    dailyData[dateStr].receitas += valor;
+                } else {
+                    dailyData[dateStr].despesas += valor;
+                }
+            }
+        });
+
+        // Calcular saldo acumulado (simulado)
+        let accumulated = 0;
+        // Nota: Idealmente pegaria o saldo atual do banco, mas aqui é apenas variação do fluxo
+
+        return Object.values(dailyData).map(day => {
+            day.saldo_projetado = day.receitas - day.despesas;
+            return day;
+        });
     }
 
     /**

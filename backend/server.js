@@ -136,5 +136,7 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 
 app.use('/api/kanban', kanbanRoutes);
 app.use('/api/clientes', clientesRoutes);
+import vendasRoutes from './routes/vendas.js';
+app.use('/api/vendas', vendasRoutes);
 
 export default app;

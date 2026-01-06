@@ -127,10 +127,36 @@ router.get('/resumo/saldo', async (req, res) => {
     res.json(resumo);
   } catch (error) {
     console.error('Erro ao calcular resumo:', error);
-    res.status(500).json({
-      error: 'Erro ao calcular resumo',
-      detalhes: error.message
-    });
+    res.status(500).json({ error: 'Erro ao calcular resumo' });
+  }
+});
+
+/**
+ * GET /resumo/receber
+ * Total a receber
+ */
+router.get('/resumo/receber', async (req, res) => {
+  try {
+    const result = await TransacaoService.getReceivables(req.user.userId);
+    res.json(result);
+  } catch (error) {
+    console.error('Erro ao buscar a receber:', error);
+    res.status(500).json({ error: 'Erro ao buscar contas a receber' });
+  }
+});
+
+/**
+ * GET /projecao
+ * Fluxo de caixa projetado
+ */
+router.get('/projecao', async (req, res) => {
+  try {
+    const dias = req.query.dias ? parseInt(req.query.dias) : 30;
+    const result = await TransacaoService.getProjection(req.user.userId, dias);
+    res.json(result);
+  } catch (error) {
+    console.error('Erro ao gerar projeção:', error);
+    res.status(500).json({ error: 'Erro ao gerar projeção' });
   }
 });
 

@@ -122,4 +122,105 @@ router.get('/investimentos', async (req, res) => {
     }
 });
 
+router.get('/financeiro-update', async (req, res) => {
+    console.log('🔄 [SETUP] Atualizando tabela de transações (Financeiro V2)...');
+
+    const schema = `
+    DO $$
+    BEGIN
+        -- 1. Adicionar colunas na tabela TRANSACOES
+        BEGIN
+            ALTER TABLE public.transacoes ADD COLUMN status VARCHAR(20) DEFAULT 'pago';
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+
+        BEGIN
+            ALTER TABLE public.transacoes ADD COLUMN data_vencimento DATE;
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+
+        -- 2. Atualizar registros antigos que estão nulos
+        UPDATE public.transacoes SET status = 'pago' WHERE status IS NULL;
+        UPDATE public.transacoes SET data_vencimento = data WHERE data_vencimento IS NULL;
+        
+        -- 3. Criar índices (se não existirem)
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_transacoes_status') THEN
+            CREATE INDEX idx_transacoes_status ON public.transacoes(status);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_transacoes_vencimento') THEN
+            CREATE INDEX idx_transacoes_vencimento ON public.transacoes(data_vencimento);
+        END IF;
+    END
+    $$;
+    `;
+
+    try {
+        const { error } = await supabase.rpc('exec_sql', { sql_query: schema });
+
+        if (error) {
+            console.error('❌ Erro RPC:', error);
+            // Fallback: tentar enviar script para user rodar
+            return res.status(500).send(`
+                <h1>Erro na Atualização Automática</h1>
+                <p>Erro técnico: ${JSON.stringify(error)}</p>
+                <p>Tente rodar o arquivo 'backend/database/UPDATE_FINANCIAL_SCHEMA.sql' manualmente no Supabase.</p>
+            `);
+        }
+
+        res.send('<h1>✅ Atualização Financeira Concluída!</h1><p>Colunas status e data_vencimento adicionadas.</p>');
+
+    } catch (error) {
+        console.error('❌ Erro fatal setup:', error);
+        res.status(500).send('Erro interno no setup: ' + error.message);
+    });
+
+router.get('/erp-update', async (req, res) => {
+    console.log('🔄 [SETUP] Atualizando ERP (Estoque Inteligente & BI)...');
+
+    const schema = `
+    DO $$
+    BEGIN
+        -- 1. Adicionar estoque_minimo em produtos
+        BEGIN
+            ALTER TABLE public.produtos ADD COLUMN estoque_minimo INTEGER DEFAULT 5;
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+
+        -- 2. Criar índices para performance de BI
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_itens_venda_produto') THEN
+            CREATE INDEX idx_itens_venda_produto ON public.itens_venda(produto_id);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_vendas_cliente') THEN
+            CREATE INDEX idx_vendas_cliente ON public.vendas(cliente_id);
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_vendas_data') THEN
+            CREATE INDEX idx_vendas_data ON public.vendas(data_venda);
+        END IF;
+    END
+    $$;
+    `;
+
+    try {
+        const { error } = await supabase.rpc('exec_sql', { sql_query: schema });
+
+        if (error) {
+            console.error('❌ Erro RPC:', error);
+            return res.status(500).send(`
+                <h1>Erro na Atualização ERP</h1>
+                <p>Erro técnico: ${JSON.stringify(error)}</p>
+                <p>Tente rodar 'backend/database/UPDATE_FULL_ERP_SCHEMA.sql' manualmente.</p>
+            `);
+        }
+
+        res.send('<h1>✅ ERP Atualizado!</h1><p>Funcionalidades de Estoque Mínimo e BI habilitadas.</p>');
+
+    } catch (error) {
+        console.error('❌ Erro fatal setup:', error);
+        res.status(500).send('Erro interno no setup: ' + error.message);
+    }
+});
+
 export default router;
