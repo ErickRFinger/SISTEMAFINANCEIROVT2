@@ -19,6 +19,7 @@ import funcionariosRoutes from './routes/funcionarios.js';
 import produtosRoutes from './routes/produtos.js';
 import kanbanRoutes from './routes/kanban.js';
 import clientesRoutes from './routes/clientes.js';
+import vendasRoutes from './routes/vendas.js';
 
 dotenv.config();
 
@@ -136,7 +137,6 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 
 app.use('/api/kanban', kanbanRoutes);
 app.use('/api/clientes', clientesRoutes);
-import vendasRoutes from './routes/vendas.js';
 app.use('/api/vendas', vendasRoutes);
 
 export default app;
