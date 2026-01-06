@@ -96,7 +96,7 @@ router.get('/investimentos', async (req, res) => {
     $$;
 
     CREATE INDEX IF NOT EXISTS idx_investimentos_user_id ON public.investimentos(user_id);
-  `;
+    `;
 
     try {
         // Tenta executar via RPC (se existir a função exec_sql)
@@ -173,7 +173,8 @@ router.get('/financeiro-update', async (req, res) => {
     } catch (error) {
         console.error('❌ Erro fatal setup:', error);
         res.status(500).send('Erro interno no setup: ' + error.message);
-    });
+    }
+});
 
 router.get('/erp-update', async (req, res) => {
     console.log('🔄 [SETUP] Atualizando ERP (Estoque Inteligente & BI)...');
