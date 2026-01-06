@@ -27,7 +27,10 @@ router.post('/', authenticateToken, async (req, res) => {
         // Frontend envia 'tipo', mas banco usa 'tipo_pessoa'
         const { nome, email, telefone, tipo, tipo_pessoa, documento, endereco } = req.body;
 
-        const tipoFinal = tipo || tipo_pessoa || 'PF';
+        // Frontend envia 'tipo' (pessoa_fisica/juridica). Banco tem colunas 'tipo' e 'tipo_pessoa'.
+        // Vamos preencher ambas para garantir compatibilidade.
+        const valorTipo = tipo || tipo_pessoa || 'pessoa_fisica';
+        const valorTipoPessoa = valorTipo === 'pessoa_fisica' ? 'PF' : 'PJ';
 
         const { data, error } = await supabase
             .from('clientes')
@@ -36,7 +39,8 @@ router.post('/', authenticateToken, async (req, res) => {
                 nome,
                 email,
                 telefone,
-                tipo_pessoa: tipoFinal, // Coluna correta no banco
+                tipo: valorTipo,         // IMPORTANTE: Frontend lê essa coluna
+                tipo_pessoa: valorTipo,  // Agora cabe (VARCHAR 50)
                 documento,
                 endereco
             }])
@@ -56,12 +60,16 @@ router.put('/:id', authenticateToken, async (req, res) => {
         const { id } = req.params;
         const { nome, email, telefone, tipo, tipo_pessoa, documento, endereco } = req.body;
 
-        const tipoFinal = tipo || tipo_pessoa;
+        const valorTipo = tipo || tipo_pessoa;
 
         const updateData = {
             nome, email, telefone, documento, endereco
         };
-        if (tipoFinal) updateData.tipo_pessoa = tipoFinal;
+
+        if (valorTipo) {
+            updateData.tipo = valorTipo;
+            updateData.tipo_pessoa = valorTipo;
+        }
 
         const { data, error } = await supabase
             .from('clientes')
