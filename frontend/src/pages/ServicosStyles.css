@@ -1,0 +1,185 @@
+/* ServicosStyles.css - Premium Catalog Style */
+:root {
+    --service-bg: #0f172a;
+    --service-primary: #3b82f6;
+    /* Blue */
+    --service-accent: #8b5cf6;
+    /* Violet */
+    --card-dark: #1e293b;
+}
+
+.services-page {
+    padding: 2rem;
+    background-color: var(--service-bg);
+    min-height: 100vh;
+    color: #f8fafc;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Header */
+.services-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.services-title h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.services-search-area {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    max-width: 600px;
+}
+
+.service-search-input {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    color: white;
+    width: 100%;
+    max-width: 300px;
+    transition: all 0.2s;
+}
+
+.service-search-input:focus {
+    border-color: var(--service-primary);
+    outline: none;
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.btn-service-add {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    transition: transform 0.2s;
+}
+
+.btn-service-add:hover {
+    transform: translateY(-2px);
+}
+
+/* Grid */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.service-card {
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.service-card-top {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.service-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #3b82f620, #3b82f640);
+    color: #60a5fa;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.service-info h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+
+.service-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #34d399;
+    /* Success Green for price */
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.service-body {
+    padding: 1.5rem;
+    flex: 1;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.service-actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Use generic btn styles or specific ones */
+.btn-action {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+
+.btn-action:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.btn-action.delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+}

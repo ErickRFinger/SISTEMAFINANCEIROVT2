@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
-import './Funcionarios.css' // Vamos criar um CSS específico para ficar bonito
+import './TeamStyles.css' // Premium Team CSS
 
 export default function Funcionarios() {
     const [funcionarios, setFuncionarios] = useState([])
+    const [filteredFuncionarios, setFilteredFuncionarios] = useState([])
+    const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(true)
     const [modalOpen, setModalOpen] = useState(false)
     const [editingFuncionario, setEditingFuncionario] = useState(null)
 
-    // Form State
     const [formData, setFormData] = useState({
         nome: '',
         cargo: '',
@@ -23,11 +24,25 @@ export default function Funcionarios() {
         fetchFuncionarios()
     }, [])
 
+    useEffect(() => {
+        if (!searchTerm) {
+            setFilteredFuncionarios(funcionarios)
+        } else {
+            const lower = searchTerm.toLowerCase()
+            const filtered = funcionarios.filter(f =>
+                f.nome.toLowerCase().includes(lower) ||
+                (f.cargo && f.cargo.toLowerCase().includes(lower))
+            )
+            setFilteredFuncionarios(filtered)
+        }
+    }, [searchTerm, funcionarios])
+
     const fetchFuncionarios = async () => {
         try {
             setLoading(true)
             const res = await api.get('/funcionarios')
             setFuncionarios(res.data)
+            setFilteredFuncionarios(res.data)
         } catch (error) {
             console.error('Erro ao buscar funcionários', error)
         } finally {
@@ -58,7 +73,7 @@ export default function Funcionarios() {
     }
 
     const handleDelete = async (id) => {
-        if (window.confirm('Tem certeza que deseja remover este funcionário?')) {
+        if (window.confirm('Tem certeza que deseja remover este colaborador?')) {
             try {
                 await api.delete(`/funcionarios/${id}`)
                 fetchFuncionarios()
@@ -99,51 +114,57 @@ export default function Funcionarios() {
         })
     }
 
-    // --- Render ---
-
     return (
-        <div className="funcionarios-page">
-            <div className="page-header">
-                <div>
+        <div className="team-page">
+            <div className="team-header">
+                <div className="team-title">
                     <h1>👥 Gestão de Pessoal</h1>
-                    <p>Cadastre e gerencie sua equipe.</p>
+                    <p style={{ color: '#94a3b8' }}>Sua equipe e colaboradores.</p>
                 </div>
-                <button className="btn-primary" onClick={() => openModal()}>
-                    + Novo Funcionário
-                </button>
+                <div className="team-controls">
+                    <button className="btn-team-add" onClick={() => openModal()}>
+                        + Colaborador
+                    </button>
+                    {/* Could add Search here too for consistency, but simpler header for now */}
+                </div>
             </div>
 
             {loading ? (
                 <div className="loading">Carregando equipe...</div>
             ) : (
-                <div className="funcionarios-grid">
-                    {funcionarios.length === 0 ? (
-                        <div className="empty-state">
-                            <p>Nenhum funcionário cadastrado.</p>
+                <div className="team-grid">
+                    {filteredFuncionarios.length === 0 ? (
+                        <div className="empty-state" style={{ gridColumn: '1/-1', textAlign: 'center', color: '#64748b' }}>
+                            <p>Sua equipe está vazia.</p>
                         </div>
                     ) : (
-                        funcionarios.map(func => (
-                            <div key={func.id} className="funcionario-card">
-                                <div className="card-header">
-                                    <div className="avatar-placeholder">
-                                        {func.nome.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="card-info">
-                                        <h3>{func.nome}</h3>
-                                        <span className="cargo-badge">{func.cargo || 'Sem Cargo'}</span>
-                                    </div>
-                                    <span className={`status-dot ${func.status === 'ativo' ? 'online' : 'offline'}`} title={func.status}></span>
+                        filteredFuncionarios.map(func => (
+                            <div key={func.id} className="member-card">
+                                <div className={`member-status ${func.status}`} title={`Status: ${func.status}`}></div>
+
+                                <div className="member-avatar">
+                                    {func.nome.charAt(0).toUpperCase()}
                                 </div>
 
-                                <div className="card-details">
-                                    <p><strong>Salário:</strong> R$ {Number(func.salario).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                    <p><strong>Admissão:</strong> {func.data_admissao ? new Date(func.data_admissao).toLocaleDateString() : '-'}</p>
-                                    {func.email && <p><strong>Email:</strong> {func.email}</p>}
+                                <div className="member-info">
+                                    <h3>{func.nome}</h3>
+                                    <span className="member-role">{func.cargo || 'Cargo não def.'}</span>
                                 </div>
 
-                                <div className="card-actions">
-                                    <button className="btn-edit" onClick={() => openModal(func)}>Editar</button>
-                                    <button className="btn-delete" onClick={() => handleDelete(func.id)}>Remover</button>
+                                <div className="member-stats">
+                                    <div className="stat-item">
+                                        <span className="stat-label">Admissão</span>
+                                        <span className="stat-value">{func.data_admissao ? new Date(func.data_admissao).toLocaleDateString() : '-'}</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">Salário</span>
+                                        <span className="stat-value">R$ {Number(func.salario || 0).toLocaleString('pt-BR')}</span>
+                                    </div>
+                                </div>
+
+                                <div className="member-actions">
+                                    <button className="btn-team-action" onClick={() => openModal(func)}>Editar</button>
+                                    <button className="btn-team-action" onClick={() => handleDelete(func.id)} style={{ color: '#fca5a5' }}>Remover</button>
                                 </div>
                             </div>
                         ))
@@ -154,56 +175,33 @@ export default function Funcionarios() {
             {/* MODAL */}
             {modalOpen && (
                 <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h2>{editingFuncionario ? 'Editar Funcionário' : 'Novo Funcionário'}</h2>
+                    <div className="modal-content" style={{ background: '#1e293b', color: 'white' }}>
+                        <h2>{editingFuncionario ? 'Editar Colaborador' : 'Novo Colaborador'}</h2>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
                                 <label>Nome Completo *</label>
-                                <input
-                                    type="text"
-                                    name="nome"
-                                    value={formData.nome}
-                                    onChange={handleInputChange}
-                                    required
-                                />
+                                <input name="nome" value={formData.nome} onChange={handleInputChange} required style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
                             </div>
 
-                            <div className="form-row">
+                            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
                                     <label>Cargo</label>
-                                    <input
-                                        type="text"
-                                        name="cargo"
-                                        value={formData.cargo}
-                                        onChange={handleInputChange}
-                                        placeholder="Ex: Vendedor"
-                                    />
+                                    <input name="cargo" value={formData.cargo} onChange={handleInputChange} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
                                 </div>
                                 <div className="form-group">
                                     <label>Salário (R$)</label>
-                                    <input
-                                        type="number"
-                                        name="salario"
-                                        value={formData.salario}
-                                        onChange={handleInputChange}
-                                        step="0.01"
-                                    />
+                                    <input type="number" name="salario" value={formData.salario} onChange={handleInputChange} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
                                 </div>
                             </div>
 
-                            <div className="form-row">
+                            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
-                                    <label>Data Admissão</label>
-                                    <input
-                                        type="date"
-                                        name="data_admissao"
-                                        value={formData.data_admissao}
-                                        onChange={handleInputChange}
-                                    />
+                                    <label>Admissão</label>
+                                    <input type="date" name="data_admissao" value={formData.data_admissao} onChange={handleInputChange} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
                                 </div>
                                 <div className="form-group">
                                     <label>Status</label>
-                                    <select name="status" value={formData.status} onChange={handleInputChange}>
+                                    <select name="status" value={formData.status} onChange={handleInputChange} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
                                         <option value="ativo">Ativo</option>
                                         <option value="inativo">Inativo</option>
                                         <option value="ferias">Férias</option>
@@ -211,29 +209,9 @@ export default function Funcionarios() {
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label>Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Telefone</label>
-                                <input
-                                    type="text"
-                                    name="telefone"
-                                    value={formData.telefone}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
                             <div className="modal-actions">
                                 <button type="button" className="btn-cancel" onClick={() => setModalOpen(false)}>Cancelar</button>
-                                <button type="submit" className="btn-confirm">Salvar</button>
+                                <button type="submit" className="btn-confirm" style={{ background: 'var(--team-primary)' }}>Salvar</button>
                             </div>
                         </form>
                     </div>

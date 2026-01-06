@@ -163,7 +163,8 @@ export default function Demandas() {
                             key={col.id}
                             className="kanban-column"
                             onDragOver={(e) => {
-                                e.preventDefault();
+                                e.preventDefault(); // MANDATORY for dropping
+                                e.dataTransfer.dropEffect = 'move';
                                 e.currentTarget.classList.add('drag-over');
                             }}
                             onDragLeave={(e) => {
@@ -191,13 +192,19 @@ export default function Demandas() {
                                         className="trello-card"
                                         draggable="true"
                                         onDragStart={(e) => {
+                                            e.dataTransfer.effectAllowed = 'move';
                                             e.dataTransfer.setData('cardId', card.id);
-                                            e.currentTarget.style.opacity = '0.5';
+                                            // Optional: Set Drag Image if needed, or leave default
+                                            e.currentTarget.style.opacity = '0.4';
                                         }}
                                         onDragEnd={(e) => {
                                             e.currentTarget.style.opacity = '1';
                                         }}
-                                        onClick={() => openModal(card)}
+                                        onClick={(e) => {
+                                            // Prevent click if it was a drag (simple heuristic or relying on browser)
+                                            // For now standard onClick is fine, but we can stopPropagation if needed
+                                            openModal(card);
+                                        }}
                                     >
                                         {/* Color Label for Priority */}
                                         <div className="card-labels">
