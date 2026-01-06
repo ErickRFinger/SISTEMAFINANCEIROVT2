@@ -51,7 +51,7 @@ router.post('/', authenticateToken, async (req, res) => {
         res.json(data[0]);
     } catch (err) {
         console.error('Erro ao cadastrar func:', err.message);
-        res.status(500).send('Erro ao cadastrar funcionário');
+        res.status(500).json({ error: 'Erro ao cadastrar funcionário: ' + err.message });
     }
 });
 

@@ -73,9 +73,8 @@ router.post('/', authenticateToken, async (req, res) => {
         res.json(data[0]);
     } catch (err) {
         console.error('❌ [PRODUTOS] Erro fatal ao cadastrar:', err);
-        console.error('   Detalhes:', err.message);
-        console.error('   Hint:', err.hint);
-        res.status(500).send('Erro ao cadastrar produto: ' + err.message);
+        // Use JSON response consistently
+        res.status(500).json({ error: 'Erro ao cadastrar produto: ' + err.message });
     }
 });
 

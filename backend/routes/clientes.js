@@ -24,7 +24,10 @@ router.get('/', authenticateToken, async (req, res) => {
 // POST /api/clientes
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { nome, email, telefone, tipo_pessoa, documento, endereco } = req.body;
+        // Frontend envia 'tipo', mas banco usa 'tipo_pessoa'
+        const { nome, email, telefone, tipo, tipo_pessoa, documento, endereco } = req.body;
+
+        const tipoFinal = tipo || tipo_pessoa || 'PF';
 
         const { data, error } = await supabase
             .from('clientes')
@@ -33,7 +36,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 nome,
                 email,
                 telefone,
-                tipo_pessoa: tipo_pessoa || 'PF',
+                tipo_pessoa: tipoFinal, // Coluna correta no banco
                 documento,
                 endereco
             }])
@@ -43,7 +46,7 @@ router.post('/', authenticateToken, async (req, res) => {
         res.json(data[0]);
     } catch (err) {
         console.error('Erro criar cliente:', err.message);
-        res.status(500).send('Erro ao cadastrar cliente');
+        res.status(500).json({ error: 'Erro ao cadastrar cliente: ' + err.message });
     }
 });
 
@@ -51,13 +54,18 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome, email, telefone, tipo_pessoa, documento, endereco } = req.body;
+        const { nome, email, telefone, tipo, tipo_pessoa, documento, endereco } = req.body;
+
+        const tipoFinal = tipo || tipo_pessoa;
+
+        const updateData = {
+            nome, email, telefone, documento, endereco
+        };
+        if (tipoFinal) updateData.tipo_pessoa = tipoFinal;
 
         const { data, error } = await supabase
             .from('clientes')
-            .update({
-                nome, email, telefone, tipo_pessoa, documento, endereco
-            })
+            .update(updateData)
             .eq('id', id)
             .eq('user_id', req.user.userId)
             .select();
