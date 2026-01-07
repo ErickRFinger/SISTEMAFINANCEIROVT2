@@ -23,17 +23,26 @@ class TransacaoService {
      * Tenta salvar com tudo. Se de erro de coluna, salva o básico.
      */
     async create(userId, transactionData) {
-        // 1. Sanitização (Evita erro 'undefined')
+        // LOG START
+        console.log('➡️ [CREATE TRANSACTION] Iniciando criação...');
+        console.log('📦 [PAYLOAD RAW]:', JSON.stringify(transactionData));
+
+        // 1. Sanitização (Evita erro 'undefined' e NaN)
         const safeId = (val) => (val === 'undefined' || val === '' || val == null) ? null : val;
+        // Float seguro: converte, se der NaN vira 0
+        const safeFloat = (val) => {
+            const n = parseFloat(val);
+            return isNaN(n) ? 0 : n;
+        };
 
         const basePayload = {
             user_id: userId,
-            descricao: transactionData.descricao,
-            valor: parseFloat(transactionData.valor),
-            tipo: transactionData.tipo,
-            data: transactionData.data,
+            descricao: transactionData.descricao || 'Sem descrição',
+            valor: safeFloat(transactionData.valor),
+            tipo: transactionData.tipo || 'despesa', // Default seguro
+            data: transactionData.data || new Date().toISOString(),
             status: transactionData.status || 'pago',
-            data_vencimento: transactionData.data_vencimento || transactionData.data,
+            data_vencimento: transactionData.data_vencimento || transactionData.data || new Date().toISOString(),
             is_recorrente: transactionData.is_recorrente || false,
             categoria_id: safeId(transactionData.categoria_id),
             banco_id: safeId(transactionData.banco_id),
@@ -41,6 +50,8 @@ class TransacaoService {
         };
 
         const contextPayload = { ...basePayload, contexto: transactionData.contexto || 'pessoal' };
+
+        console.log('🛡️ [PAYLOAD CLEANED]:', JSON.stringify(contextPayload));
 
         try {
             // TENTATIVA 1: Inserir com Contexto
@@ -50,7 +61,11 @@ class TransacaoService {
                 .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ [ERRO TENTATIVA 1]:', error);
+                throw error;
+            }
+            console.log('✅ [SUCESSO TENTATIVA 1]');
             if (basePayload.banco_id) await this._updateBankBalance(userId, basePayload.banco_id, basePayload.valor, basePayload.tipo, 'add');
             return formatTransaction(data);
 
@@ -58,15 +73,24 @@ class TransacaoService {
             console.warn('⚠️ [BACKEND] Erro ao criar (Novo Modelo). Tentando MODO LEGADO...', error.message);
 
             // TENTATIVA 2: Inserir Modo Antigo (Sem Contexto)
-            const { data: legacyData, error: legacyError } = await supabase
-                .from('transacoes')
-                .insert([basePayload])
-                .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
-                .single();
+            try {
+                const { data: legacyData, error: legacyError } = await supabase
+                    .from('transacoes')
+                    .insert([basePayload])
+                    .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
+                    .single();
 
-            if (legacyError) throw legacyError; // Se falhar aqui, é erro real (dados inválidos)
-            if (basePayload.banco_id) await this._updateBankBalance(userId, basePayload.banco_id, basePayload.valor, basePayload.tipo, 'add');
-            return formatTransaction(legacyData);
+                if (legacyError) {
+                    console.error('❌ [ERRO TENTATIVA 2 / FATAL]:', legacyError);
+                    throw legacyError;
+                }
+                console.log('✅ [SUCESSO TENTATIVA 2 (LEGADO)]');
+                if (basePayload.banco_id) await this._updateBankBalance(userId, basePayload.banco_id, basePayload.valor, basePayload.tipo, 'add');
+                return formatTransaction(legacyData);
+            } catch (fatalError) {
+                console.error('❌ [FATAL REAL]:', fatalError);
+                throw fatalError;
+            }
         }
     }
 
@@ -140,14 +164,16 @@ class TransacaoService {
         if (!transacaoAntiga) throw new Error('Transação não encontrada');
 
         const safeId = (val) => (val === 'undefined' || val === '' || val == null) ? null : val;
+        // Float seguro
+        const safeFloat = (val) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
         const payload = {
-            descricao: transactionData.descricao,
-            valor: parseFloat(transactionData.valor),
-            tipo: transactionData.tipo,
-            data: transactionData.data,
-            status: transactionData.status,
-            data_vencimento: transactionData.data_vencimento,
+            descricao: transactionData.descricao || transacaoAntiga.descricao,
+            valor: transactionData.valor !== undefined ? safeFloat(transactionData.valor) : transacaoAntiga.valor,
+            tipo: transactionData.tipo || transacaoAntiga.tipo,
+            data: transactionData.data || transacaoAntiga.data,
+            status: transactionData.status || transacaoAntiga.status,
+            data_vencimento: transactionData.data_vencimento || transacaoAntiga.data_vencimento,
             categoria_id: safeId(transactionData.categoria_id),
             banco_id: safeId(transactionData.banco_id),
             cartao_id: safeId(transactionData.cartao_id),

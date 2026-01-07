@@ -40,18 +40,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /
-router.post('/', [
-  body('descricao').trim().notEmpty().withMessage('Descrição é obrigatória'),
-  body('valor').isFloat({ min: 0.01 }).withMessage('Valor deve ser maior que zero'),
-  body('tipo').isIn(['receita', 'despesa']).withMessage('Tipo deve ser receita ou despesa'),
-  body('data').notEmpty().withMessage('Data é obrigatória')
-], async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
+    // Validation handled in Service for robustness
     const novaTransacao = await TransacaoService.create(req.user.userId, req.body);
     res.status(201).json(novaTransacao);
 
@@ -65,18 +56,8 @@ router.post('/', [
 });
 
 // PUT /:id
-router.put('/:id', [
-  body('descricao').trim().notEmpty().withMessage('Descrição é obrigatória'),
-  body('valor').isFloat({ min: 0.01 }).withMessage('Valor deve ser maior que zero'),
-  body('tipo').isIn(['receita', 'despesa']).withMessage('Tipo deve ser receita ou despesa'),
-  body('data').notEmpty().withMessage('Data é obrigatória')
-], async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const transacaoAtualizada = await TransacaoService.update(
       req.params.id,
       req.user.userId,

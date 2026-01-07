@@ -159,11 +159,27 @@ router.post('/setup', authenticateToken, async (req, res) => {
 // POST /api/kanban/cards - Create Card
 router.post('/cards', authenticateToken, async (req, res) => {
     try {
+        console.log('➡️ [KANBAN CREATE] Iniciando...');
+        console.log('📦 [PAYLOAD RAW]:', JSON.stringify(req.body));
+
         const { coluna_id, titulo, descricao, prioridade, dificuldade, responsavel_id, cliente_id, data_limite, horas_estimadas, valor, tipo_movimento } = req.body;
+
+        let finalColunaId = safeInt(coluna_id);
+
+        // FAILSAFE: Se não tem coluna, busca a primeira do usuário
+        if (!finalColunaId) {
+            console.log('⚠️ [KANBAN] Coluna ID inválido. Buscando padrão...');
+            const { data: cols } = await supabase.from('kanban_colunas').select('id').eq('user_id', req.user.userId).order('ordem').limit(1);
+            if (cols && cols.length > 0) {
+                finalColunaId = cols[0].id;
+            } else {
+                throw new Error('Nenhuma coluna disponível para criar o card.');
+            }
+        }
 
         const payload = {
             user_id: req.user.userId,
-            coluna_id: safeInt(coluna_id),
+            coluna_id: finalColunaId,
             titulo,
             descricao,
             prioridade: prioridade || 'media',
@@ -176,12 +192,18 @@ router.post('/cards', authenticateToken, async (req, res) => {
             tipo_movimento: tipo_movimento || 'saida'
         };
 
+        console.log('🛡️ [PAYLOAD CLEANED]:', JSON.stringify(payload));
+
         const { data, error } = await supabase.from('kanban_cards').insert([payload]).select();
-        if (error) throw error;
+
+        if (error) {
+            console.error('❌ [KANBAN DB ERROR]:', error);
+            throw error;
+        }
         res.json(data[0]);
     } catch (err) {
-        console.error('Erro criar card:', err.message);
-        res.status(500).send('Erro ao criar tarefa');
+        console.error('❌ [KANBAN SERVER ERROR]:', err.message);
+        res.status(500).send('Erro ao criar tarefa. Verifique o console.');
     }
 });
 
