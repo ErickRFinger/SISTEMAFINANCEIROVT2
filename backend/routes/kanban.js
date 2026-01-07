@@ -261,6 +261,11 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
 
+        // 0. Validação de URL (CRITICA): Bloqueia ID 'undefined'
+        if (!id || id === 'undefined' || id === 'null' || isNaN(parseInt(id))) {
+            return res.status(400).json({ error: 'ID do card inválido na URL (Frontend Error).' });
+        }
+
         // Helpers Locais
         const safeIntVal = (v) => {
             if (v === 'undefined' || v === 'null' || v === '' || v === undefined) return null;
@@ -300,7 +305,8 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error('Erro update card (brute):', err);
-        res.status(500).json({ error: err.message || 'Erro desconhecido' });
+        // Retorna erro detalhado
+        res.status(500).json({ error: err.message || 'Erro desconhecido', details: err });
     }
 });
 
