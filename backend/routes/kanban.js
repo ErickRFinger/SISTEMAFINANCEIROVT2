@@ -194,8 +194,12 @@ router.put('/cards/:id/move', authenticateToken, async (req, res) => {
         const { data: currentCard } = await supabase.from('kanban_cards').select('coluna_id').eq('id', id).single();
         if (!currentCard) throw new Error('Card não encontrado');
 
-        const newColumnId = nova_coluna_id || currentCard.coluna_id;
-        const newPos = nova_posicao !== undefined ? nova_posicao : 0;
+        // SANITIZATION FIX:
+        const nColId = safeInt(nova_coluna_id);
+        const nPos = safeInt(nova_posicao, 0);
+
+        const newColumnId = nColId !== null ? nColId : currentCard.coluna_id;
+        const newPos = nPos;
 
         const { data, error } = await supabase
             .from('kanban_cards')
