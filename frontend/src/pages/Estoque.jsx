@@ -137,9 +137,18 @@ export default function Estoque() {
                     <h1>📦 Estoque de Produtos</h1>
                     <p>Controle de inventário físico e valuation.</p>
                 </div>
-                <button className="btn-primary" onClick={() => openModal()}>
-                    + Novo Produto
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                        className="btn-secondary"
+                        onClick={() => window.open(import.meta.env.VITE_API_URL + '/setup/fix-inventory', '_blank')}
+                        title="Clique aqui se as fotos não estiverem carregando"
+                    >
+                        🛠️ Reparar Sistema
+                    </button>
+                    <button className="btn-primary" onClick={() => openModal()}>
+                        + Novo Produto
+                    </button>
+                </div>
             </div>
 
             {/* TOTALS SUMMARY */}

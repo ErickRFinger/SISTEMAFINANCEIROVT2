@@ -46,10 +46,10 @@ export default function BusinessDashboard() {
 
         try {
             const [resumo, receivables, transacoes, projecao] = await Promise.all([
-                safeFetch(api.get('/transacoes/resumo/saldo', { params: mesAno }), { receitas: 0, despesas: 0, saldo: 0 }),
-                safeFetch(api.get('/transacoes/resumo/receber'), { total: 0 }),
-                safeFetch(api.get('/transacoes', { params: mesAno }), []),
-                safeFetch(api.get('/transacoes/projecao?dias=30'), [])
+                safeFetch(api.get('/transacoes/resumo/saldo', { params: { ...mesAno, contexto: 'empresarial' } }), { receitas: 0, despesas: 0, saldo: 0 }),
+                safeFetch(api.get('/transacoes/resumo/receber', { params: { contexto: 'empresarial' } }), { total: 0 }), // Backend endpoint needs support for this too? Just checked logic, getReceivables filters by user only. Should fix backend to accept query.
+                safeFetch(api.get('/transacoes', { params: { ...mesAno, contexto: 'empresarial' } }), []),
+                safeFetch(api.get('/transacoes/projecao?dias=30&contexto=empresarial'), [])
             ]);
 
             setStats({

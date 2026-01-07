@@ -44,16 +44,16 @@ export default function Dashboard() {
     try {
       setLoading(true)
       setError(null)
-      console.log('🔄 Carregando dados do dashboard...', mesAno)
+      console.log('🔄 Carregando dados do dashboard (PESSOAL)...', mesAno)
 
       // Carregar cada requisição individualmente para melhor tratamento de erros
       let resumoData = { receitas: 0, despesas: 0, saldo: 0 }
       let transacoesData = []
       let perfilData = { ganho_fixo_mensal: 0 }
 
-      // Carregar resumo
+      // Carregar resumo (Contexto PESSOAL)
       try {
-        const resumoRes = await api.get('/transacoes/resumo/saldo', { params: mesAno })
+        const resumoRes = await api.get('/transacoes/resumo/saldo', { params: { ...mesAno, contexto: 'pessoal' } })
         resumoData = resumoRes.data || {}
       } catch (error) {
         console.error('❌ Erro ao carregar resumo:', error)
@@ -66,9 +66,9 @@ export default function Dashboard() {
         setMetas(metasRes.data || [])
       } catch (error) { console.error('Erro metas', error) }
 
-      // Carregar transações
+      // Carregar transações (Contexto PESSOAL)
       try {
-        const transacoesRes = await api.get('/transacoes', { params: { ...mesAno } })
+        const transacoesRes = await api.get('/transacoes', { params: { ...mesAno, contexto: 'pessoal' } })
         transacoesData = Array.isArray(transacoesRes.data) ? transacoesRes.data : []
       } catch (error) {
         console.error('❌ Erro ao carregar transações:', error)
@@ -104,7 +104,7 @@ export default function Dashboard() {
       try {
         const [bancosRes, investimentosRes] = await Promise.all([
           api.get('/bancos'),
-          api.get('/investimentos')
+          api.get('/investimentos') // Contexto? Investimentos geralmente são pessoais.
         ])
 
         const moveisBancos = bancosRes.data || []

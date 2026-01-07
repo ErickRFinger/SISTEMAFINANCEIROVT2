@@ -20,7 +20,8 @@ export default function Transacoes() {
   const [filtros, setFiltros] = useState({
     tipo: '',
     mes: String(new Date().getMonth() + 1).padStart(2, '0'),
-    ano: String(new Date().getFullYear())
+    ano: String(new Date().getFullYear()),
+    contexto: '' // Filtro de contexto (vazio = todos)
   })
 
   // Form State
@@ -32,9 +33,10 @@ export default function Transacoes() {
     categoria_id: '',
     banco_id: '',
     cartao_id: '',
-    status: 'pago', // Novo
-    data_vencimento: new Date().toISOString().split('T')[0], // Novo
-    is_recorrente: false
+    status: 'pago',
+    data_vencimento: new Date().toISOString().split('T')[0],
+    is_recorrente: false,
+    contexto: 'pessoal' // Contexto padrão
   })
 
   useEffect(() => {
@@ -124,7 +126,8 @@ export default function Transacoes() {
       cartao_id: '',
       status: 'pago',
       data_vencimento: new Date().toISOString().split('T')[0],
-      is_recorrente: false
+      is_recorrente: false,
+      contexto: 'pessoal'
     })
   }
 
@@ -140,7 +143,8 @@ export default function Transacoes() {
       cartao_id: transacao.cartao_id || '',
       status: transacao.status || 'pago',
       data_vencimento: transacao.data_vencimento || transacao.data,
-      is_recorrente: transacao.is_recorrente || false
+      is_recorrente: transacao.is_recorrente || false,
+      contexto: transacao.contexto || 'pessoal'
     })
     setShowModal(true)
   }
@@ -261,6 +265,18 @@ export default function Transacoes() {
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, width: 'auto' }}>
+            <select
+              value={filtros.contexto}
+              onChange={(e) => setFiltros({ ...filtros, contexto: e.target.value })}
+              style={{ borderRadius: '99px', padding: '0.5rem 1rem' }}
+            >
+              <option value="">Todos Contextos</option>
+              <option value="pessoal">Pessoal</option>
+              <option value="empresarial">Empresarial</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, width: 'auto' }}>
             <input
               type="month"
               value={`${filtros.ano}-${filtros.mes}`}
@@ -299,6 +315,11 @@ export default function Transacoes() {
                       {(t.banco_nome || t.cartao_nome) && (
                         <span>• {t.banco_nome} {t.cartao_nome ? `(${t.cartao_nome})` : ''}</span>
                       )}
+                    </div>
+                    <div style={{ marginTop: '0.2rem' }}>
+                      <span className="t-badge" style={{ backgroundColor: t.contexto === 'empresarial' ? '#4f46e5' : '#10b981', color: '#fff', fontSize: '0.7em', padding: '2px 6px', borderRadius: '4px' }}>
+                        {t.contexto === 'empresarial' ? 'Empresarial' : 'Pessoal'}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -354,6 +375,32 @@ export default function Transacoes() {
                 <div className="form-group">
                   <label>Vencimento</label>
                   <input type="date" value={formData.data_vencimento} onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Contexto</label>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="contexto"
+                      value="pessoal"
+                      checked={formData.contexto === 'pessoal'}
+                      onChange={(e) => setFormData({ ...formData, contexto: e.target.value })}
+                    />
+                    👤 Pessoal
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="contexto"
+                      value="empresarial"
+                      checked={formData.contexto === 'empresarial'}
+                      onChange={(e) => setFormData({ ...formData, contexto: e.target.value })}
+                    />
+                    🏢 Empresarial
+                  </label>
                 </div>
               </div>
 
@@ -420,9 +467,8 @@ export default function Transacoes() {
               </div>
             </form>
           </div>
-        </div >
-      )
-      }
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -433,6 +479,6 @@ export default function Transacoes() {
         confirmText="Excluir"
         isDangerous={true}
       />
-    </div >
+    </div>
   )
 }
