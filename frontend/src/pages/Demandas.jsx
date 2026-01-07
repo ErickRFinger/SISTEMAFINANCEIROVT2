@@ -379,7 +379,9 @@ export default function Demandas() {
             setModalOpen(false)
             fetchKanban()
         } catch (error) {
-            console.error(error)
+            console.error('Erro ao salvar card:', error);
+            const msg = error.response?.data?.error || error.response?.data || error.message || 'Erro ao salvar.';
+            alert(`Falha ao salvar: ${typeof msg === 'object' ? JSON.stringify(msg) : msg}`);
         }
     }
 
