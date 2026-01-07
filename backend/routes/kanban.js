@@ -184,7 +184,7 @@ router.post('/cards', authenticateToken, async (req, res) => {
                 cliente_id,
                 data_limite,
                 horas_estimadas,
-                valor: valor || 0,
+                valor: (valor === '' || valor === undefined) ? 0 : parseFloat(valor),
                 tipo_movimento: tipo_movimento || 'saida'
             }])
             .select();
@@ -264,7 +264,7 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
                 descricao,
                 prioridade,
                 dificuldade,
-                valor,
+                valor: (valor === '' || valor === undefined) ? 0 : parseFloat(valor),
                 data_conclusao,
                 tipo_movimento
             })
@@ -272,11 +272,15 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
             .eq('user_id', req.user.userId)
             .select();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase Update Error:', error);
+            throw error;
+        }
         res.json(data[0]);
     } catch (err) {
-        console.error('Erro update card:', err.message);
-        res.status(500).send('Erro ao atualizar tarefa');
+        console.error('Erro update card (catch):', err);
+        const msg = err.message || 'Erro desconhecido';
+        res.status(500).json({ error: msg });
     }
 });
 

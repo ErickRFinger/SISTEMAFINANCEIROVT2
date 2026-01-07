@@ -40,11 +40,47 @@ class TransacaoService {
             query = query.eq('contexto', contexto);
         }
 
-        const { data, error } = await query;
+        try {
+            const { data, error } = await query;
+            if (error) throw error;
+            return data.map(formatTransaction);
+        } catch (error) {
+            // Self-healing: Se erro for de coluna inexistente, tenta criar e tentar de novo
+            if (error.code === '42703' || error.message.includes('contexto')) {
+                console.warn('⚠️ [BACKEND] Coluna contexto faltando. Tentando corrigir automaticamente...');
+                await this._ensureContextColumn();
+                // Retry attempt
+                const { data: retryData, error: retryError } = await query;
+                if (retryError) throw retryError;
+                return retryData.map(formatTransaction);
+            }
+            throw error;
+        }
+    }
 
-        if (error) throw error;
-
-        return data.map(formatTransaction);
+    /**
+     * Helper para garantir que coluna existe (Self-Healing)
+     */
+    async _ensureContextColumn() {
+        try {
+            const schema = `
+            DO $$
+            BEGIN
+                BEGIN
+                    ALTER TABLE public.transacoes ADD COLUMN contexto VARCHAR(20) DEFAULT 'pessoal';
+                EXCEPTION WHEN duplicate_column THEN NULL;
+                END;
+                BEGIN
+                    ALTER TABLE public.categorias ADD COLUMN contexto VARCHAR(20) DEFAULT 'pessoal';
+                EXCEPTION WHEN duplicate_column THEN NULL;
+                END;
+            END
+            $$;
+            `;
+            await supabase.rpc('exec_sql', { sql_query: schema });
+        } catch (e) {
+            console.error('Falha ao tentar auto-correção de coluna:', e);
+        }
     }
 
     /**
@@ -347,23 +383,49 @@ class TransacaoService {
             query = query.eq('contexto', contexto);
         }
 
-        const { data: transacoes, error } = await query;
+        try {
+            const { data: transacoes, error } = await query;
+            if (error) throw error;
 
-        if (error) throw error;
+            const receitas = transacoes
+                .filter(t => t.tipo === 'receita')
+                .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
-        const receitas = transacoes
-            .filter(t => t.tipo === 'receita')
-            .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
+            const despesas = transacoes
+                .filter(t => t.tipo === 'despesa')
+                .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
-        const despesas = transacoes
-            .filter(t => t.tipo === 'despesa')
-            .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
+            return {
+                receitas: parseFloat(receitas.toFixed(2)),
+                despesas: parseFloat(despesas.toFixed(2)),
+                saldo: parseFloat((receitas - despesas).toFixed(2))
+            };
+        } catch (error) {
+            // Self-healing: Se erro for de coluna inexistente
+            if (error.code === '42703' || error.message.includes('contexto')) {
+                await this._ensureContextColumn();
+                // Retry attempt
+                const { data: retryData, error: retryError } = await query;
+                if (retryError) throw retryError;
 
-        return {
-            receitas: parseFloat(receitas.toFixed(2)),
-            despesas: parseFloat(despesas.toFixed(2)),
-            saldo: parseFloat((receitas - despesas).toFixed(2))
-        };
+                // Recalculate logic specific to getBalance
+                const transacoes = retryData || [];
+                const receitas = transacoes
+                    .filter(t => t.tipo === 'receita')
+                    .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
+
+                const despesas = transacoes
+                    .filter(t => t.tipo === 'despesa')
+                    .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
+
+                return {
+                    receitas: parseFloat(receitas.toFixed(2)),
+                    despesas: parseFloat(despesas.toFixed(2)),
+                    saldo: parseFloat((receitas - despesas).toFixed(2))
+                };
+            }
+            throw error;
+        }
     }
 }
 
