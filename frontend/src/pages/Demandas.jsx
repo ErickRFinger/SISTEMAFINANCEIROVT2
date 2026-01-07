@@ -31,7 +31,7 @@ const SortableCard = ({ card, onClick }) => {
         transition,
         isDragging
     } = useSortable({
-        id: card.id,
+        id: `card-${card.id}`, // Prefix Card ID
         data: {
             type: 'Card',
             card,
@@ -44,6 +44,7 @@ const SortableCard = ({ card, onClick }) => {
         opacity: isDragging ? 0.3 : 1,
     };
 
+    // ... (keep label logic same)
     const getPriorityLabel = (priority) => {
         switch (priority) {
             case 'alta': return 'label-high';
@@ -92,7 +93,7 @@ const SortableColumn = ({ column, cards, onEditColumn, onDeleteColumn, onAddCard
         transition,
         isDragging
     } = useSortable({
-        id: column.id,
+        id: `col-${column.id}`, // Prefix Column ID
         data: {
             type: 'Column',
             column,
@@ -105,7 +106,8 @@ const SortableColumn = ({ column, cards, onEditColumn, onDeleteColumn, onAddCard
         opacity: isDragging ? 0.5 : 1,
     };
 
-    const cardIds = useMemo(() => cards.map((c) => c.id), [cards]);
+    // Card IDs for SortableContext must also be prefixed
+    const cardIds = useMemo(() => cards.map((c) => `card-${c.id}`), [cards]);
 
     return (
         <div ref={setNodeRef} style={style} className="kanban-column">
@@ -142,7 +144,7 @@ export default function Demandas() {
     const [activeDragId, setActiveDragId] = useState(null)
     const [activeDragData, setActiveDragData] = useState(null)
 
-    // UI States
+    // ... (keep standard states)
     const [loading, setLoading] = useState(true)
     const [modalOpen, setModalOpen] = useState(false)
     const [columnModalOpen, setColumnModalOpen] = useState(false)
@@ -180,7 +182,7 @@ export default function Demandas() {
     }
 
     const onDragStart = (event) => {
-        setActiveDragId(event.active.id);
+        setActiveDragId(event.active.id); // This will be 'card-1' or 'col-1'
         setActiveDragData(event.active.data.current);
     }
 
@@ -188,23 +190,31 @@ export default function Demandas() {
         const { active, over } = event;
         if (!over) return;
 
-        const activeId = active.id;
-        const overId = over.id;
-        const isActiveCard = active.data.current?.type === 'Card';
-        const isOverCard = over.data.current?.type === 'Card';
-        const isOverColumn = over.data.current?.type === 'Column';
+        // IDs are prefixed
+        const activeIdStr = String(active.id);
+        const overIdStr = String(over.id);
 
-        if (!isActiveCard) return;
+        const isActiveCard = activeIdStr.startsWith('card-');
+        const isOverCard = overIdStr.startsWith('card-');
+        const isOverColumn = overIdStr.startsWith('col-');
 
-        // Find source and destination columns
-        const findColumn = (id) => {
-            const col = columns.find(c => c.id === id);
-            if (col) return col;
-            return columns.find(c => c.cards.some(card => card.id === id));
+        if (!isActiveCard) return; // Only process card drags in DragOver for sorting
+
+        const getRealId = (str) => parseInt(str.split('-')[1]);
+
+        // Helper to find column containing a card (by real ID) or by column ID
+        const findColumn = (idStr) => {
+            if (idStr.startsWith('col-')) {
+                return columns.find(c => c.id === getRealId(idStr));
+            }
+            if (idStr.startsWith('card-')) {
+                return columns.find(c => c.cards.some(card => card.id === getRealId(idStr)));
+            }
+            return null;
         };
 
-        const activeColumn = findColumn(activeId);
-        const overColumn = findColumn(overId);
+        const activeColumn = findColumn(activeIdStr);
+        const overColumn = findColumn(overIdStr);
 
         if (!activeColumn || !overColumn) return;
 
@@ -217,16 +227,23 @@ export default function Demandas() {
                 const activeCol = { ...newColumns[activeColIndex] };
                 const overCol = { ...newColumns[overColIndex] };
 
-                const cardIndex = activeCol.cards.findIndex(c => c.id === activeId);
+                const realActiveCardId = getRealId(activeIdStr);
+                const cardIndex = activeCol.cards.findIndex(c => c.id === realActiveCardId);
                 const activeCard = activeCol.cards[cardIndex];
 
+                if (!activeCard) return prev; // Safety
+
+                // Remove from source
                 activeCol.cards = [...activeCol.cards];
                 activeCol.cards.splice(cardIndex, 1);
 
+                // Add to target
                 overCol.cards = [...overCol.cards];
                 let newIndex;
                 if (isOverCard) {
-                    const overCardIndex = overCol.cards.findIndex(c => c.id === overId);
+                    const realOverCardId = getRealId(overIdStr);
+                    const overCardIndex = overCol.cards.findIndex(c => c.id === realOverCardId);
+
                     const isBelowOverItem = over &&
                         active.rect.current.translated &&
                         active.rect.current.translated.top > over.rect.top + over.rect.height;
@@ -236,7 +253,11 @@ export default function Demandas() {
                     newIndex = overCol.cards.length + 1;
                 }
 
+                // Update card's internal column ID
                 const updatedCard = { ...activeCard, coluna_id: overColumn.id };
+
+                // Safe splice
+                if (newIndex > overCol.cards.length) newIndex = overCol.cards.length;
                 overCol.cards.splice(newIndex, 0, updatedCard);
 
                 newColumns[activeColIndex] = activeCol;
@@ -254,38 +275,53 @@ export default function Demandas() {
 
         if (!over) return;
 
-        const activeId = active.id;
-        const overId = over.id;
+        const activeIdStr = String(active.id);
+        const overIdStr = String(over.id);
         const type = active.data.current?.type;
 
+        const getRealId = (str) => parseInt(str.split('-')[1]);
+
+        // --- COLUMN SORTING ---
         if (type === 'Column') {
-            if (activeId !== overId) {
+            if (activeIdStr !== overIdStr) {
                 setColumns((items) => {
-                    const oldIndex = items.findIndex(c => c.id === activeId);
-                    const newIndex = items.findIndex(c => c.id === overId);
+                    const oldIndex = items.findIndex(c => c.id === getRealId(activeIdStr));
+                    const newIndex = items.findIndex(c => c.id === getRealId(overIdStr));
                     return arrayMove(items, oldIndex, newIndex);
                 });
+                // TODO: Save column order if backend supports it
             }
             return;
         }
 
+        // --- CARD SORTING / MOVING ---
         if (type === 'Card') {
-            const findColumn = (id) => {
-                const col = columns.find(c => c.id === id);
-                if (col) return col;
-                return columns.find(c => c.cards.some(card => card.id === id));
+            const findColumn = (idStr) => {
+                if (idStr.startsWith('col-')) return columns.find(c => c.id === getRealId(idStr));
+                return columns.find(c => c.cards.some(card => card.id === getRealId(idStr)));
             };
 
-            const activeColumn = findColumn(activeId);
+            const activeColumn = findColumn(activeIdStr);
+            const realActiveId = getRealId(activeIdStr);
+
             if (activeColumn) {
-                const cardIndex = activeColumn.cards.findIndex(c => c.id === activeId);
-                await api.put(`/kanban/cards/${activeId}/move`, {
+                const cardIndex = activeColumn.cards.findIndex(c => c.id === realActiveId);
+
+                // Call API to persist move
+                await api.put(`/kanban/cards/${realActiveId}/move`, {
                     nova_coluna_id: activeColumn.id,
                     nova_posicao: cardIndex
                 });
             }
         }
     }
+
+    // Keep all standard handlers (Modal, Create, Delete, etc.)
+    // ...
+
+    // ... (handlers like handleCreateColumn, handleDeleteColumn, etc. remain unchanged, skipping for brevity in replacement)
+    // Actually, I need to include them or ensure previous code is preserved.
+    // Since I'm replacing a huge block, I'll resume standard functions.
 
     const handleCreateColumn = async () => {
         if (!columnTitle.trim()) return;
@@ -357,7 +393,6 @@ export default function Demandas() {
     const handleCardSubmit = async (e) => {
         e.preventDefault();
         try {
-            // SAFE DEFAULT: Use selected column OR first available column
             const defaultColumnId = columns.length > 0 ? columns[0].id : null;
             const finalColId = cardFormData.coluna_id || defaultColumnId;
 
@@ -374,7 +409,6 @@ export default function Demandas() {
                 cliente_id: cardFormData.cliente_id || null
             };
 
-            // STRICT LOGIC: ID exists = Update. No ID = Create.
             if (editingCard && editingCard.id) {
                 await api.put(`/kanban/cards/${editingCard.id}`, payload);
             } else {
@@ -382,7 +416,7 @@ export default function Demandas() {
             }
 
             setModalOpen(false);
-            setEditingCard(null); // Clear editing state immediately
+            setEditingCard(null);
             fetchKanban();
         } catch (error) {
             console.error('Erro ao salvar card:', error);
@@ -419,7 +453,7 @@ export default function Demandas() {
                 onDragEnd={onDragEnd}
             >
                 <div className="kanban-board-container">
-                    <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
+                    <SortableContext items={columns.map(c => `col-${c.id}`)} strategy={horizontalListSortingStrategy}>
                         {columns.map(col => (
                             <SortableColumn
                                 key={col.id}
@@ -449,6 +483,7 @@ export default function Demandas() {
                 </DragOverlay>
             </DndContext>
 
+            {/* Modal Components */}
             {columnModalOpen && (
                 <div className="trello-modal-overlay" onClick={(e) => e.target.className === 'trello-modal-overlay' && setColumnModalOpen(false)}>
                     <div className="trello-modal small">
@@ -517,6 +552,7 @@ export default function Demandas() {
                     </div>
                 </div>
             )}
+
         </div>
     )
 }
