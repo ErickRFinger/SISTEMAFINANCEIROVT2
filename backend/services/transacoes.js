@@ -6,7 +6,10 @@ class TransacaoService {
     /**
      * Listar transações com filtros
      */
-    async list(userId, { mes, ano, tipo, status }) {
+    /**
+     * Listar transações com filtros
+     */
+    async list(userId, { mes, ano, tipo, status, contexto }) {
         let query = supabase
             .from('transacoes')
             .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor), cartoes(nome, cor)`)
@@ -25,6 +28,7 @@ class TransacaoService {
 
         if (tipo) query = query.eq('tipo', tipo);
         if (status) query = query.eq('status', status);
+        if (contexto) query = query.eq('contexto', contexto);
 
         const { data, error } = await query;
         if (error) throw error;
@@ -45,13 +49,13 @@ class TransacaoService {
             valor: safeFloat(transactionData.valor),
             tipo: transactionData.tipo || 'despesa',
             data: transactionData.data || new Date().toISOString(),
-            status: transactionData.status || 'pago',
             data_vencimento: transactionData.data_vencimento || transactionData.data,
             is_recorrente: transactionData.is_recorrente || false,
             categoria_id: safeId(transactionData.categoria_id),
             banco_id: safeId(transactionData.banco_id),
-            cartao_id: safeId(transactionData.cartao_id)
-            // Contexto removido pois não existe no banco
+            cartao_id: safeId(transactionData.cartao_id),
+            // Adicionando suporte para contexto se enviado
+            contexto: transactionData.contexto || 'pessoal'
         };
 
         const { data, error } = await supabase
@@ -85,11 +89,12 @@ class TransacaoService {
             valor: transactionData.valor !== undefined ? safeFloat(transactionData.valor) : transacaoAntiga.valor,
             tipo: transactionData.tipo || transacaoAntiga.tipo,
             data: transactionData.data || transacaoAntiga.data,
-            status: transactionData.status || transacaoAntiga.status,
             data_vencimento: transactionData.data_vencimento || transacaoAntiga.data_vencimento,
             categoria_id: safeId(transactionData.categoria_id),
             banco_id: safeId(transactionData.banco_id),
-            cartao_id: safeId(transactionData.cartao_id)
+            cartao_id: safeId(transactionData.cartao_id),
+            // Manter contexto antigo se não informado
+            contexto: transactionData.contexto || transacaoAntiga.contexto
         };
 
         const { data, error } = await supabase
@@ -130,9 +135,9 @@ class TransacaoService {
         return formatTransaction(data);
     }
 
-    async getBalance(userId, { mes, ano }) {
-        // Cálculo simples baseado na lista filtrada
-        const transacoes = await this.list(userId, { mes, ano });
+    async getBalance(userId, { mes, ano, contexto }) {
+        // Agora passa o contexto
+        const transacoes = await this.list(userId, { mes, ano, contexto });
 
         const receitas = transacoes
             .filter(t => t.tipo === 'receita')
@@ -149,18 +154,57 @@ class TransacaoService {
         };
     }
 
-    async getReceivables(userId) {
-        const { data } = await supabase.from('transacoes')
+    async getReceivables(userId, contexto) {
+        let query = supabase.from('transacoes')
             .select('valor')
             .eq('user_id', userId)
             .eq('tipo', 'receita')
             .eq('status', 'pendente');
 
+        if (contexto) query = query.eq('contexto', contexto);
+
+        const { data } = await query;
+
         const total = (data || []).reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
         return { total: parseFloat(total.toFixed(2)) };
     }
 
-    async getProjection(u, d, c) { return []; }
+    // Implementing Projection (Fixing the dashboard bug)
+    async getProjection(userId, days = 30, contexto) {
+        try {
+            const today = new Date();
+            const futureDate = new Date();
+            futureDate.setDate(today.getDate() + days);
+
+            let query = supabase.from('transacoes')
+                .select('*')
+                .eq('user_id', userId)
+                .gte('data_vencimento', today.toISOString().split('T')[0])
+                .lte('data_vencimento', futureDate.toISOString().split('T')[0]);
+
+            if (contexto) query = query.eq('contexto', contexto);
+
+            const { data } = await query;
+            if (!data) return [];
+
+            // Group by day for chart
+            const projection = data.reduce((acc, t) => {
+                const day = new Date(t.data_vencimento).getDate();
+                const currentVal = acc[day] || 0;
+                acc[day] = currentVal + (t.tipo === 'receita' ? Number(t.valor) : -Number(t.valor));
+                return acc;
+            }, {});
+
+            return Object.keys(projection).map(d => ({
+                name: `Dia ${d}`,
+                saldo_projetado: projection[d]
+            })).sort((a, b) => parseInt(a.name.split(' ')[1]) - parseInt(b.name.split(' ')[1]));
+
+        } catch (e) {
+            console.error('Projection error', e);
+            return [];
+        }
+    }
 
     async _updateBankBalance(userId, bancoId, valor, tipo, operation) {
         try {

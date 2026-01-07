@@ -87,7 +87,7 @@ router.get('/resumo/saldo', async (req, res) => {
 // GET /resumo/receber
 router.get('/resumo/receber', async (req, res) => {
   try {
-    const result = await TransacaoService.getReceivables(req.user.userId);
+    const result = await TransacaoService.getReceivables(req.user.userId, req.query.contexto);
     res.json(result);
   } catch (error) {
     console.error('Erro ao buscar a receber:', error);

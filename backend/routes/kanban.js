@@ -27,6 +27,33 @@ const safeFloat = (val, defaultVal = 0) => {
 
 // --- COLUMNS ---
 
+// GET /api/kanban/financial-summary - Sum values for Business Dashboard
+router.get('/financial-summary', authenticateToken, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('kanban_cards')
+            .select('valor, tipo_movimento')
+            .eq('user_id', req.user.userId);
+
+        if (error) throw error;
+
+        const summary = data.reduce((acc, card) => {
+            const val = parseFloat(card.valor || 0);
+            if (card.tipo_movimento === 'entrada') {
+                acc.receita += val;
+            } else {
+                acc.despesa += val;
+            }
+            return acc;
+        }, { receita: 0, despesa: 0 });
+
+        res.json(summary);
+    } catch (err) {
+        console.error('Erro Kanban Summary:', err.message);
+        res.status(500).send('Erro ao calcular resumo kanban');
+    }
+});
+
 // GET /api/kanban/columns - List Columns with Cards
 router.get('/columns', authenticateToken, async (req, res) => {
     try {

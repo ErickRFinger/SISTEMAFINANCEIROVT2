@@ -130,9 +130,11 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+// Always listen if NOT on Vercel, regardless of NODE_ENV (allows local production testing)
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`   Ambiente: ${process.env.NODE_ENV}`);
   });
 }
 
