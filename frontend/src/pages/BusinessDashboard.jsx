@@ -45,19 +45,26 @@ export default function BusinessDashboard() {
         });
 
         try {
-            const [resumo, receivables, transacoes, projecao] = await Promise.all([
+            // Parallel Fetch with Safe Fallbacks
+            const [resumo, receivables, transacoes, projecao, kanbanStats] = await Promise.all([
                 safeFetch(api.get('/transacoes/resumo/saldo', { params: { ...mesAno, contexto: 'empresarial' } }), { receitas: 0, despesas: 0, saldo: 0 }),
-                safeFetch(api.get('/transacoes/resumo/receber', { params: { contexto: 'empresarial' } }), { total: 0 }), // Backend endpoint needs support for this too? Just checked logic, getReceivables filters by user only. Should fix backend to accept query.
+                safeFetch(api.get('/transacoes/resumo/receber', { params: { contexto: 'empresarial' } }), { total: 0 }),
                 safeFetch(api.get('/transacoes', { params: { ...mesAno, contexto: 'empresarial' } }), []),
-                safeFetch(api.get('/transacoes/projecao?dias=30&contexto=empresarial'), [])
+                safeFetch(api.get('/transacoes/projecao?dias=30&contexto=empresarial'), []),
+                safeFetch(api.get('/kanban/financial-summary'), { receita: 0, despesa: 0 })
             ]);
 
+            // Ensure kanbanStats is valid even if safeFetch returned null (unlikely but possible)
+            const safeKanban = kanbanStats || { receita: 0, despesa: 0 };
+
             setStats({
-                faturamento: Number(resumo.receitas || 0),
-                receber: Number(receivables.total || 0),
-                pagar: Number(resumo.despesas || 0),
-                lucro: Number(resumo.saldo || 0)
+                faturamento: Number(resumo?.receitas || 0),
+                receber: Number(receivables?.total || 0) + Number(safeKanban.receita || 0),
+                pagar: Number(resumo?.despesas || 0) + Number(safeKanban.despesa || 0),
+                lucro: Number(resumo?.saldo || 0),
+                rawKanban: safeKanban
             })
+
 
             const txList = Array.isArray(transacoes) ? transacoes : []
             setProjectionData(Array.isArray(projecao) ? projecao : [])

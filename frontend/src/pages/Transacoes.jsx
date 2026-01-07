@@ -388,11 +388,9 @@ export default function Transacoes() {
 
               <div className="grid grid-2">
                 <div className="form-group">
-                  <label>Status</label>
-                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
-                    <option value="pago">✅ Pago / Recebido</option>
-                    <option value="pendente">⏳ Pendente / A Receber</option>
-                  </select>
+                  <div className="form-group">
+                    {/* Status removido simplificação */}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Vencimento</label>
