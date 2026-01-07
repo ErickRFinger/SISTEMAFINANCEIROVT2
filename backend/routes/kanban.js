@@ -4,13 +4,32 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// --- HELPERS ---
+
+// Ultimate Sanitizer Helper
+const safeInt = (val, defaultVal = null) => {
+    if (val === undefined || val === null) return defaultVal;
+    if (typeof val === 'string') {
+        if (val.trim() === '' || val === 'undefined' || val === 'null') return defaultVal;
+    }
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) ? defaultVal : parsed;
+};
+
+const safeFloat = (val, defaultVal = 0) => {
+    if (val === undefined || val === null) return defaultVal;
+    if (typeof val === 'string') {
+        if (val.trim() === '' || val === 'undefined' || val === 'null') return defaultVal;
+    }
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? defaultVal : parsed;
+};
+
 // --- COLUMNS ---
 
 // GET /api/kanban/columns - List Columns with Cards
 router.get('/columns', authenticateToken, async (req, res) => {
     try {
-        console.log(`[KANBAN] Buscando dados para user: ${req.user.userId}`);
-
         // 1. Fetch Columns
         const { data: columns, error: colError } = await supabase
             .from('kanban_colunas')
@@ -18,28 +37,18 @@ router.get('/columns', authenticateToken, async (req, res) => {
             .eq('user_id', req.user.userId)
             .order('ordem', { ascending: true });
 
-        if (colError) {
-            console.error('[KANBAN] Erro colunas:', colError);
-            throw colError;
-        }
+        if (colError) throw colError;
 
-        // 2. Fetch Cards for all columns
+        // 2. Fetch Cards
         const { data: cards, error: cardError } = await supabase
             .from('kanban_cards')
-            .select(`
-        *,
-        responsavel:funcionarios(nome),
-        cliente:clientes(nome)
-      `)
+            .select(`*, responsavel:funcionarios(nome), cliente:clientes(nome)`)
             .eq('user_id', req.user.userId)
             .order('posicao', { ascending: true });
 
-        if (cardError) {
-            console.error('[KANBAN] Erro cards:', cardError);
-            throw cardError;
-        }
+        if (cardError) throw cardError;
 
-        // 3. Structure data: Column -> Cards[]
+        // 3. Structure data
         const boardData = columns.map(col => ({
             ...col,
             cards: cards.filter(c => c.coluna_id === col.id)
@@ -52,13 +61,11 @@ router.get('/columns', authenticateToken, async (req, res) => {
     }
 });
 
-// POST /api/kanban/columns - Custom Create Column
+// POST /api/kanban/columns - Create Column
 router.post('/columns', authenticateToken, async (req, res) => {
     try {
         const { titulo, cor } = req.body;
-
-        // Find max order to append
-        const { data: maxCol, error: maxError } = await supabase
+        const { data: maxCol } = await supabase
             .from('kanban_colunas')
             .select('ordem')
             .eq('user_id', req.user.userId)
@@ -90,7 +97,6 @@ router.put('/columns/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { titulo, cor, ordem } = req.body;
-
         const updates = {};
         if (titulo !== undefined) updates.titulo = titulo;
         if (cor !== undefined) updates.cor = cor;
@@ -111,11 +117,10 @@ router.put('/columns/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// DELETE /api/kanban/columns/:id - Delete Column
+// DELETE /api/kanban/columns/:id
 router.delete('/columns/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-
         const { error } = await supabase
             .from('kanban_colunas')
             .delete()
@@ -130,7 +135,7 @@ router.delete('/columns/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// POST /api/kanban/setup - Create Default Columns
+// POST /api/kanban/setup - Setup
 router.post('/setup', authenticateToken, async (req, res) => {
     try {
         const defaultCols = [
@@ -139,121 +144,124 @@ router.post('/setup', authenticateToken, async (req, res) => {
             { titulo: 'Bloqueado', ordem: 3, cor: '#ef4444' },
             { titulo: 'Concluído', ordem: 4, cor: '#10b981' }
         ];
-
-        const inserts = defaultCols.map(col => ({
-            ...col,
-            user_id: req.user.userId
-        }));
-
-        const { data, error } = await supabase
-            .from('kanban_colunas')
-            .insert(inserts)
-            .select();
-
+        const inserts = defaultCols.map(col => ({ ...col, user_id: req.user.userId }));
+        const { data, error } = await supabase.from('kanban_colunas').insert(inserts).select();
         if (error) throw error;
         res.json(data);
     } catch (err) {
         console.error('Erro setup kanban:', err.message);
-        // --- CARDS ---
+        res.status(500).send('Erro ao configurar kanban');
+    }
+});
 
-        // Ultimate Sanitizer Helper
-        const safeInt = (val, defaultVal = null) => {
-            if (val === undefined || val === null) return defaultVal;
-            if (typeof val === 'string') {
-                if (val.trim() === '' || val === 'undefined' || val === 'null') return defaultVal;
-            }
-            const parsed = parseInt(val, 10);
-            return isNaN(parsed) ? defaultVal : parsed;
+// --- CARDS ---
+
+// POST /api/kanban/cards - Create Card
+router.post('/cards', authenticateToken, async (req, res) => {
+    try {
+        const { coluna_id, titulo, descricao, prioridade, dificuldade, responsavel_id, cliente_id, data_limite, horas_estimadas, valor, tipo_movimento } = req.body;
+
+        const payload = {
+            user_id: req.user.userId,
+            coluna_id: safeInt(coluna_id),
+            titulo,
+            descricao,
+            prioridade: prioridade || 'media',
+            dificuldade,
+            responsavel_id: safeInt(responsavel_id),
+            cliente_id: safeInt(cliente_id),
+            data_limite: (data_limite && data_limite !== 'undefined') ? data_limite : null,
+            horas_estimadas: safeFloat(horas_estimadas),
+            valor: safeFloat(valor),
+            tipo_movimento: tipo_movimento || 'saida'
         };
 
-        const safeFloat = (val, defaultVal = 0) => {
-            if (val === undefined || val === null) return defaultVal;
-            if (typeof val === 'string') {
-                if (val.trim() === '' || val === 'undefined' || val === 'null') return defaultVal;
-            }
-            const parsed = parseFloat(val);
-            return isNaN(parsed) ? defaultVal : parsed;
+        const { data, error } = await supabase.from('kanban_cards').insert([payload]).select();
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Erro criar card:', err.message);
+        res.status(500).send('Erro ao criar tarefa');
+    }
+});
+
+// PUT /api/kanban/cards/:id/move - Move Card
+router.put('/cards/:id/move', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nova_coluna_id, nova_posicao } = req.body;
+
+        const { data: currentCard } = await supabase.from('kanban_cards').select('coluna_id').eq('id', id).single();
+        if (!currentCard) throw new Error('Card não encontrado');
+
+        const newColumnId = nova_coluna_id || currentCard.coluna_id;
+        const newPos = nova_posicao !== undefined ? nova_posicao : 0;
+
+        const { data, error } = await supabase
+            .from('kanban_cards')
+            .update({ coluna_id: newColumnId, posicao: newPos })
+            .eq('id', id)
+            .eq('user_id', req.user.userId)
+            .select();
+
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Erro mover card:', err.message);
+        res.status(500).send('Erro ao mover tarefa');
+    }
+});
+
+// PUT /api/kanban/cards/:id - update
+router.put('/cards/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { titulo, descricao, prioridade, dificuldade, valor, data_conclusao, tipo_movimento, responsavel_id, cliente_id, horas_estimadas } = req.body;
+
+        const updatePayload = {
+            titulo,
+            descricao,
+            prioridade,
+            dificuldade,
+            valor: safeFloat(valor),
+            data_conclusao: (data_conclusao && data_conclusao !== 'undefined') ? data_conclusao : null,
+            tipo_movimento,
+            responsavel_id: safeInt(responsavel_id),
+            cliente_id: safeInt(cliente_id),
+            horas_estimadas: safeFloat(horas_estimadas)
         };
 
-        // POST /api/kanban/cards - Create Card
-        router.post('/cards', authenticateToken, async (req, res) => {
-            try {
-                console.log('[KANBAN POST] Body:', req.body); // Debug log
-                const { coluna_id, titulo, descricao, prioridade, dificuldade, responsavel_id, cliente_id, data_limite, horas_estimadas, valor, tipo_movimento } = req.body;
+        const { data, error } = await supabase
+            .from('kanban_cards')
+            .update(updatePayload)
+            .eq('id', id)
+            .eq('user_id', req.user.userId)
+            .select();
 
-                const payload = {
-                    user_id: req.user.userId,
-                    coluna_id: safeInt(coluna_id), // CRITICAL: This was likely the culprit if empty
-                    titulo,
-                    descricao,
-                    prioridade: prioridade || 'media',
-                    dificuldade,
-                    responsavel_id: safeInt(responsavel_id),
-                    cliente_id: safeInt(cliente_id),
-                    data_limite: (data_limite && data_limite !== 'undefined') ? data_limite : null,
-                    horas_estimadas: safeFloat(horas_estimadas),
-                    valor: safeFloat(valor),
-                    tipo_movimento: tipo_movimento || 'saida'
-                };
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Erro update card (catch):', err);
+        res.status(500).json({ error: err.message || 'Erro desconhecido' });
+    }
+});
 
-                const { data, error } = await supabase
-                    .from('kanban_cards')
-                    .insert([payload])
-                    .select();
+// DELETE /api/kanban/cards/:id
+router.delete('/cards/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase
+            .from('kanban_cards')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', req.user.userId);
 
-                if (error) throw error;
-                res.json(data[0]);
-            } catch (err) {
-                console.error('Erro criar card:', err.message);
-                res.status(500).send('Erro ao criar tarefa: ' + err.message);
-            }
-        });
+        if (error) throw error;
+        res.json({ msg: 'Card removido' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Erro ao remover card');
+    }
+});
 
-        // PUT /api/kanban/cards/:id/move - Move Card
-        router.put('/cards/:id/move', authenticateToken, async (req, res) => {
-            try {
-                const { id } = req.params;
-                const { nova_coluna_id, nova_posicao } = req.body;
-
-                const { data: currentCard, error: fetchError } = await supabase
-                    .from('kanban_cards')
-                    .select('*')
-                    .eq('id', id)
-                    .eq('user_id', req.user.userId)
-                    .single();
-
-                if (fetchError || !currentCard) throw new Error('Card não encontrado ou acesso negado');
-
-                const oldColumnId = currentCard.coluna_id;
-                const newColumnId = nova_coluna_id || oldColumnId;
-                const newPos = nova_posicao !== undefined ? nova_posicao : 0;
-
-                const { data, error } = await supabase
-                    .from('kanban_cards')
-                    .update({
-                        coluna_id: newColumnId,
-                        posicao: newPos
-                    })
-                    .eq('id', id)
-                    .eq('user_id', req.user.userId)
-                    .select();
-
-                if (error) throw error;
-                res.json(data[0]);
-            } catch (err) {
-                console.error('Erro mover card:', err.message);
-                const { error } = await supabase
-                    .from('kanban_cards')
-                    .delete()
-                    .eq('id', id)
-                    .eq('user_id', req.user.userId);
-
-                if (error) throw error;
-                res.json({ msg: 'Card removido' });
-            } catch (err) {
-                console.error(err);
-                res.status(500).send('Erro ao remover card');
-            }
-        });
-
-        export default router;
+export default router;
