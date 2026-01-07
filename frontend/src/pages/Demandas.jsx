@@ -355,37 +355,39 @@ export default function Demandas() {
     }
 
     const handleCardSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
         try {
-            // Ensure payload is safe
+            // SAFE DEFAULT: Use selected column OR first available column
+            const defaultColumnId = columns.length > 0 ? columns[0].id : null;
+            const finalColId = cardFormData.coluna_id || defaultColumnId;
+
+            if (!finalColId) {
+                alert('Erro: Nenhuma coluna encontrada. Crie uma coluna primeiro.');
+                return;
+            }
+
             const payload = {
                 ...cardFormData,
-                // Sanitize IDs
-                coluna_id: (cardFormData.coluna_id === '' || cardFormData.coluna_id === undefined || cardFormData.coluna_id === 'undefined')
-                    ? (columns[0]?.id || null)
-                    : cardFormData.coluna_id,
-
-                valor: (cardFormData.valor === '' || cardFormData.valor === undefined) ? 0 : cardFormData.valor,
-
-                responsavel_id: (cardFormData.responsavel_id === '' || cardFormData.responsavel_id === 'undefined') ? null : cardFormData.responsavel_id,
-
-                cliente_id: (cardFormData.cliente_id === '' || cardFormData.cliente_id === 'undefined') ? null : cardFormData.cliente_id,
-
-                dificuldade: cardFormData.dificuldade || 'medio',
-                prioridade: cardFormData.prioridade || 'media'
+                coluna_id: finalColId,
+                valor: Number(cardFormData.valor || 0),
+                responsavel_id: cardFormData.responsavel_id || null,
+                cliente_id: cardFormData.cliente_id || null
             };
 
-            if (editingCard) {
-                await api.put(`/kanban/cards/${editingCard.id}`, payload)
+            // STRICT LOGIC: ID exists = Update. No ID = Create.
+            if (editingCard && editingCard.id) {
+                await api.put(`/kanban/cards/${editingCard.id}`, payload);
             } else {
-                await api.post('/kanban/cards', payload)
+                await api.post('/kanban/cards', payload);
             }
-            setModalOpen(false)
-            fetchKanban()
+
+            setModalOpen(false);
+            setEditingCard(null); // Clear editing state immediately
+            fetchKanban();
         } catch (error) {
             console.error('Erro ao salvar card:', error);
-            const msg = error.response?.data?.error || error.response?.data || error.message || 'Erro ao salvar.';
-            alert(`Falha ao salvar: ${typeof msg === 'object' ? JSON.stringify(msg) : msg}`);
+            const msg = error.response?.data?.error || 'Erro ao salvar.';
+            alert(msg);
         }
     }
 

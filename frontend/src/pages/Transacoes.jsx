@@ -101,10 +101,13 @@ export default function Transacoes() {
     const sanitizedPayload = {
       ...formData,
       valor: formData.valor === '' ? 0 : parseFloat(formData.valor),
-      categoria_id: formData.categoria_id || null, // Ensure empty strings become null
+      categoria_id: formData.categoria_id || null,
       banco_id: formData.banco_id || null,
       cartao_id: formData.cartao_id || null
+      // Context removed from payload
     }
+    // Remove context property explicitly if it persists in formData
+    delete sanitizedPayload.contexto;
 
     // Validation: Prevent generic errors if value is missing
     if (!sanitizedPayload.descricao) {
@@ -127,8 +130,10 @@ export default function Transacoes() {
       // alert(editing ? 'Atualizado!' : 'Criado com sucesso!') // Removed invasive alert for smoother flow, or kept if user prefers feedback. Keeping it minimal.
     } catch (error) {
       console.error(error)
-      const msg = error.response?.data?.error || error.message || 'Erro ao salvar';
-      alert('Erro ao salvar transação: ' + msg);
+      const data = error.response?.data || {};
+      const msg = data.error || error.message || 'Erro ao salvar';
+      const details = data.details || '';
+      alert(`Erro ao salvar transação: ${msg} ${details ? JSON.stringify(details) : ''}`);
     }
   }
 
@@ -395,31 +400,7 @@ export default function Transacoes() {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Contexto</label>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="contexto"
-                      value="pessoal"
-                      checked={formData.contexto === 'pessoal'}
-                      onChange={(e) => setFormData({ ...formData, contexto: e.target.value })}
-                    />
-                    👤 Pessoal
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="contexto"
-                      value="empresarial"
-                      checked={formData.contexto === 'empresarial'}
-                      onChange={(e) => setFormData({ ...formData, contexto: e.target.value })}
-                    />
-                    🏢 Empresarial
-                  </label>
-                </div>
-              </div>
+              {/* Contexto removido simplificação */}
 
               <div className="form-group">
                 <label>Categoria</label>
