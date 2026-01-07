@@ -182,8 +182,8 @@ router.put('/:id', authenticateToken, upload.single('imagem'), async (req, res) 
         if (error) throw error;
         res.json(data[0]);
     } catch (err) {
-        console.error('Erro ao atualizar produto:', err.message);
-        res.status(500).send('Erro ao atualizar produto');
+        console.error('Erro ao atualizar produto:', err);
+        res.status(500).json({ error: 'Erro no servidor: ' + err.message });
     }
 });
 

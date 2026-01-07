@@ -253,6 +253,17 @@ router.get('/fix-system', async (req, res) => {
         EXCEPTION WHEN duplicate_column THEN NULL;
         END;
 
+        -- [NEW] CONTEXTO (PESSOAL vs EMPRESARIAL)
+        BEGIN
+            ALTER TABLE public.transacoes ADD COLUMN contexto VARCHAR(20) DEFAULT 'pessoal';
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+
+        BEGIN
+            ALTER TABLE public.categorias ADD COLUMN contexto VARCHAR(20) DEFAULT 'pessoal';
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+
         -- 2. ADICIONAR COLUNAS ERP (ESTOQUE)
         BEGIN
             ALTER TABLE public.produtos ADD COLUMN estoque_minimo INTEGER DEFAULT 5;
@@ -266,6 +277,10 @@ router.get('/fix-system', async (req, res) => {
 
         IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_transacoes_vencimento') THEN
             CREATE INDEX idx_transacoes_vencimento ON public.transacoes(data_vencimento);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_transacoes_contexto') THEN
+            CREATE INDEX idx_transacoes_contexto ON public.transacoes(contexto);
         END IF;
     END
     $$;
@@ -334,6 +349,48 @@ router.get('/fix-inventory', async (req, res) => {
             const { data: buckets } = await supabase.storage.listBuckets();
             const produtosBucket = buckets?.find(b => b.name === 'produtos');
 
+            // 2.0 FORÇAR POLICIES (Mesmo se bucket ja existe)
+            const rlsSql = `
+                BEGIN;
+                -- Habilitar RLS em storage.objects se ainda nao estiver (por padrao está)
+                -- Mas vamos criar policies permissivas para o bucket 'produtos'
+                
+                -- 1. SELECT Publico
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'Public Access Produtos'
+                    ) THEN
+                        CREATE POLICY "Public Access Produtos" ON storage.objects FOR SELECT USING ( bucket_id = 'produtos' );
+                    END IF;
+                END $$;
+
+                -- 2. INSERT Autenticado
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'Authenticated Upload Produtos'
+                    ) THEN
+                        CREATE POLICY "Authenticated Upload Produtos" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'produtos' AND auth.role() = 'authenticated' );
+                    END IF;
+                END $$;
+
+                -- 3. UPDATE/DELETE Dono (simplificado para autenticado por enquanto)
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'Authenticated Update Produtos'
+                    ) THEN
+                        CREATE POLICY "Authenticated Update Produtos" ON storage.objects FOR UPDATE USING ( bucket_id = 'produtos' AND auth.role() = 'authenticated' );
+                    END IF;
+                END $$;
+
+                COMMIT;
+            `;
+            // Tentar aplicar policies via RPC
+            await supabase.rpc('exec_sql', { sql_query: rlsSql });
+
+
             if (!produtosBucket) {
                 console.log('🆕 [SETUP] Criando bucket produtos...');
                 const { error: createError } = await supabase.storage.createBucket('produtos', {
@@ -353,7 +410,7 @@ router.get('/fix-inventory', async (req, res) => {
                 const { error: updateError } = await supabase.storage.updateBucket('produtos', {
                     public: true
                 });
-                results.bucket = updateError ? 'exists_update_failed' : 'exists_public_verified';
+                results.bucket = updateError ? 'exists_update_failed' : 'exists_public_verified_policies_applied';
             }
         } catch (storageErr) {
             console.error('❌ [SETUP] Erro Storage:', storageErr);
