@@ -12,6 +12,7 @@ router.use(authenticateToken);
  * GET /
  * Listar transações
  */
+// GET /
 router.get('/', async (req, res) => {
   try {
     const transacoes = await TransacaoService.list(req.user.userId, req.query);
@@ -22,10 +23,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * GET /:id
- * Obter transação por ID
- */
+// GET /:id
 router.get('/:id', async (req, res) => {
   try {
     const transacao = await TransacaoService.getById(req.params.id, req.user.userId);
@@ -41,10 +39,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * POST /
- * Criar transação
- */
+// POST /
 router.post('/', [
   body('descricao').trim().notEmpty().withMessage('Descrição é obrigatória'),
   body('valor').isFloat({ min: 0.01 }).withMessage('Valor deve ser maior que zero'),
@@ -52,13 +47,11 @@ router.post('/', [
   body('data').notEmpty().withMessage('Data é obrigatória')
 ], async (req, res) => {
   try {
-    // 1. Validação de campos básicos
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // 2. Chamada ao serviço
     const novaTransacao = await TransacaoService.create(req.user.userId, req.body);
     res.status(201).json(novaTransacao);
 
@@ -71,10 +64,7 @@ router.post('/', [
   }
 });
 
-/**
- * PUT /:id
- * Atualizar transação
- */
+// PUT /:id
 router.put('/:id', [
   body('descricao').trim().notEmpty().withMessage('Descrição é obrigatória'),
   body('valor').isFloat({ min: 0.01 }).withMessage('Valor deve ser maior que zero'),
@@ -103,10 +93,7 @@ router.put('/:id', [
   }
 });
 
-/**
- * DELETE /:id
- * Deletar transação
- */
+// DELETE /:id
 router.delete('/:id', async (req, res) => {
   try {
     await TransacaoService.delete(req.params.id, req.user.userId);
@@ -117,10 +104,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-/**
- * GET /resumo/saldo
- * Resumo financeiro
- */
+// GET /resumo/saldo
 router.get('/resumo/saldo', async (req, res) => {
   try {
     const resumo = await TransacaoService.getBalance(req.user.userId, req.query);
@@ -131,10 +115,7 @@ router.get('/resumo/saldo', async (req, res) => {
   }
 });
 
-/**
- * GET /resumo/receber
- * Total a receber
- */
+// GET /resumo/receber
 router.get('/resumo/receber', async (req, res) => {
   try {
     const result = await TransacaoService.getReceivables(req.user.userId);
@@ -145,14 +126,13 @@ router.get('/resumo/receber', async (req, res) => {
   }
 });
 
-/**
- * GET /projecao
- * Fluxo de caixa projetado
- */
+// GET /projecao
 router.get('/projecao', async (req, res) => {
   try {
     const dias = req.query.dias ? parseInt(req.query.dias) : 30;
-    const result = await TransacaoService.getProjection(req.user.userId, dias);
+    // Pass context if present
+    const contexto = req.query.contexto;
+    const result = await TransacaoService.getProjection(req.user.userId, dias, contexto);
     res.json(result);
   } catch (error) {
     console.error('Erro ao gerar projeção:', error);

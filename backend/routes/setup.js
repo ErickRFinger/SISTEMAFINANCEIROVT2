@@ -304,4 +304,114 @@ router.get('/fix-system', async (req, res) => {
     }
 });
 
+// Rota de Correção de Estoque (Imagens + Tabela)
+router.get('/fix-inventory', async (req, res) => {
+    try {
+        console.log('📦 [SETUP] Iniciando correção de Estoque...');
+        const results = { db_column: 'pending', bucket: 'pending' };
+
+        // 1. DATABASE: Adicionar coluna imagem_url
+        try {
+            const { error } = await supabase.rpc('exec_sql', {
+                sql_query: `ALTER TABLE public.produtos ADD COLUMN IF NOT EXISTS imagem_url TEXT;`
+            });
+
+            // Fallback se RPC não existir (tenta via query direta se client permitir ddl, improvável mas ok)
+            // Se RPC falhou, assumimos erro.
+            if (error) {
+                // Tentar método alternativo ou apenas logar
+                console.warn('⚠️ [SETUP] Falha RPC exec_sql. Tentando ignorar se coluna já existe...');
+            }
+            results.db_column = 'ok (tried)';
+        } catch (dbErr) {
+            console.error('❌ [SETUP] Erro DB:', dbErr);
+            results.db_column = 'error';
+        }
+
+        // 2. STORAGE: Tentar criar bucket 'produtos'
+        try {
+            // Verificar se bucket existe
+            const { data: buckets } = await supabase.storage.listBuckets();
+            const produtosBucket = buckets?.find(b => b.name === 'produtos');
+
+            if (!produtosBucket) {
+                console.log('🆕 [SETUP] Criando bucket produtos...');
+                const { error: createError } = await supabase.storage.createBucket('produtos', {
+                    public: true,
+                    fileSizeLimit: 5242880, // 5MB
+                    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+                });
+
+                if (createError) {
+                    console.error('❌ [SETUP] Falha ao criar bucket:', createError);
+                    results.bucket = 'failed_create - ' + createError.message;
+                } else {
+                    results.bucket = 'created';
+                }
+            } else {
+                // Garantir que é público (update)
+                const { error: updateError } = await supabase.storage.updateBucket('produtos', {
+                    public: true
+                });
+                results.bucket = updateError ? 'exists_update_failed' : 'exists_public_verified';
+            }
+        } catch (storageErr) {
+            console.error('❌ [SETUP] Erro Storage:', storageErr);
+            results.bucket = 'error_accessing_storage';
+        }
+
+        res.json({
+            msg: 'Tentativa de correção de estoque concluída',
+            details: results,
+            tip: 'Se o bucket falhou, crie manualmente no Supabase Dashboard: Storage -> New Bucket -> "produtos" (Public)'
+        });
+
+    } catch (error) {
+        console.error('❌ [SETUP] Erro geral fix-inventory:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/update-context', async (req, res) => {
+    console.log('🔄 [SETUP] Adicionando coluna contexto (Personal/Business)...');
+
+    const schema = `
+    DO $$
+    BEGIN
+        -- 1. Adicionar coluna contexto
+        BEGIN
+            ALTER TABLE public.transacoes ADD COLUMN contexto VARCHAR(20) DEFAULT 'pessoal';
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+
+        -- 2. Índice para performance
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_transacoes_contexto') THEN
+            CREATE INDEX idx_transacoes_contexto ON public.transacoes(contexto);
+        END IF;
+
+        -- 3. Categorias também podem ter contexto (Opcional, mas bom para filtrar categorias de empresa)
+        BEGIN
+            ALTER TABLE public.categorias ADD COLUMN contexto VARCHAR(20) DEFAULT 'pessoal';
+        EXCEPTION WHEN duplicate_column THEN NULL;
+        END;
+    END
+    $$;
+    `;
+
+    try {
+        const { error } = await supabase.rpc('exec_sql', { sql_query: schema });
+
+        if (error) {
+            console.error('❌ Erro RPC:', error);
+            return res.status(500).send(`Erro ao atualizar: ${JSON.stringify(error)}`);
+        }
+
+        res.send('<h1>✅ Atualização de Contexto Concluída!</h1><p>Agora as transações podem ser separadas entre Pessoal e Empresarial.</p>');
+
+    } catch (error) {
+        console.error('❌ Erro fatal setup:', error);
+        res.status(500).send('Erro interno: ' + error.message);
+    }
+});
+
 export default router;
