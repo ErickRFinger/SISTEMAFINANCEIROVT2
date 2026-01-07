@@ -1,6 +1,7 @@
 import express from 'express';
 import supabase from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /api/produtos
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, upload.single('imagem'), async (req, res) => {
     try {
         const {
             nome,
@@ -43,6 +44,9 @@ router.post('/', authenticateToken, async (req, res) => {
             margem_lucro
         } = req.body;
 
+        const file = req.file;
+        let imagem_url = null;
+
         // VALIDAÇÃO BÁSICA
         if (!nome || nome.trim() === '') {
             return res.status(400).json({ error: 'Nome é obrigatório.' });
@@ -52,6 +56,31 @@ router.post('/', authenticateToken, async (req, res) => {
 
         if (tpItem === 'produto' && (quantidade_estoque !== undefined && quantidade_estoque < 0)) {
             return res.status(400).json({ error: 'Estoque não pode ser negativo.' });
+        }
+
+        // UPLOAD TO SUPABASE IF FILE EXISTS
+        if (file) {
+            const fileExt = file.originalname.split('.').pop();
+            const fileName = `${req.user.userId}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('produtos') // Bucket name
+                .upload(filePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Supabase Storage Error:', uploadError);
+                // Continue without image or throw? Let's verify bucket exists first, but for now continue.
+            } else {
+                const { data: publicUrlData } = supabase.storage
+                    .from('produtos')
+                    .getPublicUrl(filePath);
+
+                imagem_url = publicUrlData.publicUrl;
+            }
         }
 
         const { data, error } = await supabase
@@ -65,7 +94,8 @@ router.post('/', authenticateToken, async (req, res) => {
                 quantidade_estoque: quantidade_estoque || 0,
                 tipo_item: tpItem,
                 localizacao,
-                margem_lucro
+                margem_lucro,
+                imagem_url
             }])
             .select();
 
@@ -73,13 +103,12 @@ router.post('/', authenticateToken, async (req, res) => {
         res.json(data[0]);
     } catch (err) {
         console.error('❌ [PRODUTOS] Erro fatal ao cadastrar:', err);
-        // Use JSON response consistently
         res.status(500).json({ error: 'Erro ao cadastrar produto: ' + err.message });
     }
 });
 
 // PUT /api/produtos/:id
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, upload.single('imagem'), async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -92,6 +121,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             localizacao,
             margem_lucro
         } = req.body;
+
+        const file = req.file;
 
         // VALIDAÇÃO BÁSICA
         if (!nome || nome.trim() === '') {
@@ -106,18 +137,44 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Preços não podem ser negativos.' });
         }
 
+        let updates = {
+            nome,
+            descricao,
+            preco_venda,
+            preco_custo,
+            quantidade_estoque,
+            tipo_item,
+            localizacao,
+            margem_lucro
+        };
+
+        // UPLOAD TO SUPABASE IF FILE EXISTS
+        if (file) {
+            const fileExt = file.originalname.split('.').pop();
+            const fileName = `${req.user.userId}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('produtos') // Bucket name
+                .upload(filePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Supabase Storage Error:', uploadError);
+            } else {
+                const { data: publicUrlData } = supabase.storage
+                    .from('produtos')
+                    .getPublicUrl(filePath);
+
+                updates.imagem_url = publicUrlData.publicUrl;
+            }
+        }
+
         const { data, error } = await supabase
             .from('produtos')
-            .update({
-                nome,
-                descricao,
-                preco_venda,
-                preco_custo,
-                quantidade_estoque,
-                tipo_item, // 'produto' or 'servico'
-                localizacao,
-                margem_lucro
-            })
+            .update(updates)
             .eq('id', id)
             .eq('user_id', req.user.userId)
             .select();

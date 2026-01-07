@@ -55,7 +55,88 @@ router.get('/columns', authenticateToken, async (req, res) => {
     }
 });
 
-// POST /api/kanban/columns - Create Default Columns (Setup)
+// POST /api/kanban/columns - Custom Create Column
+router.post('/columns', authenticateToken, async (req, res) => {
+    try {
+        const { titulo, cor } = req.body;
+
+        // Find max order to append
+        const { data: maxCol, error: maxError } = await supabase
+            .from('kanban_colunas')
+            .select('ordem')
+            .eq('user_id', req.user.userId)
+            .order('ordem', { ascending: false })
+            .limit(1);
+
+        const nextOrder = (maxCol && maxCol.length > 0) ? maxCol[0].ordem + 1 : 1;
+
+        const { data, error } = await supabase
+            .from('kanban_colunas')
+            .insert([{
+                user_id: req.user.userId,
+                titulo: titulo || 'Nova Coluna',
+                cor: cor || '#f1f5f9',
+                ordem: nextOrder
+            }])
+            .select();
+
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Erro criar coluna:', err.message);
+        res.status(500).send('Erro ao criar coluna');
+    }
+});
+
+// PUT /api/kanban/columns/:id - Update Column
+router.put('/columns/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { titulo, cor, ordem } = req.body;
+
+        const updates = {};
+        if (titulo !== undefined) updates.titulo = titulo;
+        if (cor !== undefined) updates.cor = cor;
+        if (ordem !== undefined) updates.ordem = ordem;
+
+        const { data, error } = await supabase
+            .from('kanban_colunas')
+            .update(updates)
+            .eq('id', id)
+            .eq('user_id', req.user.userId)
+            .select();
+
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Erro atualizar coluna:', err.message);
+        res.status(500).send('Erro ao atualizar coluna');
+    }
+});
+
+// DELETE /api/kanban/columns/:id - Delete Column
+router.delete('/columns/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // NOTE: Postgres cascade might handle cards, otherwise we should check.
+        // Assuming user wants to delete column and its cards.
+
+        const { error } = await supabase
+            .from('kanban_colunas')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', req.user.userId);
+
+        if (error) throw error;
+        res.json({ msg: 'Coluna removida' });
+    } catch (err) {
+        console.error('Erro remover coluna:', err.message);
+        res.status(500).send('Erro ao remover coluna');
+    }
+});
+
+// POST /api/kanban/setup - Create Default Columns (Setup)
 router.post('/setup', authenticateToken, async (req, res) => {
     try {
         const defaultCols = [
