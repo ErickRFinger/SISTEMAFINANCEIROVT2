@@ -42,16 +42,67 @@ router.get('/:id', async (req, res) => {
 // POST /
 router.post('/', async (req, res) => {
   try {
-    // Validation handled in Service for robustness
-    const novaTransacao = await TransacaoService.create(req.user.userId, req.body);
-    res.status(201).json(novaTransacao);
+    const { descricao, valor, tipo, data, status, categoria_id, banco_id, cartao_id, contexto, is_recorrente, data_vencimento } = req.body;
+
+    // 1. Sanitização Local (Simplificada e Direta)
+    const safeFloat = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const safeId = (v) => (v === 'undefined' || v === '' || v == null) ? null : v;
+
+    const payload = {
+      user_id: req.user.userId,
+      descricao: descricao || 'Nova Transação',
+      valor: safeFloat(valor),
+      tipo: tipo || 'despesa',
+      data: data || new Date().toISOString(),
+      status: status || 'pago',
+      categoria_id: safeId(categoria_id),
+      banco_id: safeId(banco_id),
+      cartao_id: safeId(cartao_id),
+      is_recorrente: is_recorrente || false,
+      data_vencimento: data_vencimento || data || new Date().toISOString(),
+      contexto: contexto || 'pessoal' // Tenta enviar contexto
+    };
+
+    // 2. Insert Direto (Tentativa Principal)
+    const { data: newTx, error } = await supabase
+      .from('transacoes')
+      .insert([payload])
+      .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
+      .single();
+
+    if (error) {
+      console.warn('⚠️ [ROTA] Erro ao inserir com contexto. Tentando fallback...', error.message);
+
+      // 3. Fallback (Sem Contexto)
+      delete payload.contexto;
+
+      const { data: legacyTx, error: legacyError } = await supabase
+        .from('transacoes')
+        .insert([payload])
+        .select(`*, categories:categorias(nome, cor), banks:bancos(nome, cor)`)
+        .single();
+
+      if (legacyError) {
+        console.error('❌ [ROTA FATAL] Erro no fallback:', legacyError);
+        throw legacyError;
+      }
+
+      // Atualiza saldo (Se der certo)
+      if (payload.banco_id) {
+        await TransacaoService._updateBankBalance(req.user.userId, payload.banco_id, payload.valor, payload.tipo, 'add');
+      }
+      return res.status(201).json(legacyTx);
+    }
+
+    // Sucesso Principal
+    if (payload.banco_id) {
+      await TransacaoService._updateBankBalance(req.user.userId, payload.banco_id, payload.valor, payload.tipo, 'add');
+    }
+    return res.status(201).json(newTx);
 
   } catch (error) {
-    console.error('Erro ao criar transação:', error);
-    if (error.message && (error.message.includes('inválid') || error.message.includes('pertence'))) {
-      return res.status(400).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Erro ao criar transação' });
+    console.error('Erro CRITICO ao criar transação:', error);
+    res.status(500).json({ error: 'Erro ao criar transação. Verifique os dados.' });
   }
 });
 

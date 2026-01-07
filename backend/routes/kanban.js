@@ -156,54 +156,72 @@ router.post('/setup', authenticateToken, async (req, res) => {
 
 // --- CARDS ---
 
-// POST /api/kanban/cards - Create Card
+// POST /api/kanban/cards - Create Card (BRUTE FORCE FIX)
 router.post('/cards', authenticateToken, async (req, res) => {
     try {
-        console.log('➡️ [KANBAN CREATE] Iniciando...');
-        console.log('📦 [PAYLOAD RAW]:', JSON.stringify(req.body));
+        console.log('➡️ [KANBAN BRUTE] Iniciando Create...');
+
+        // 1. Helpers Locais (Garantia de Funcionamento)
+        const safeIntVal = (v) => {
+            if (v === 'undefined' || v === 'null' || v === '' || v === undefined) return null;
+            const n = parseInt(v, 10);
+            return isNaN(n) ? null : n;
+        };
+        const safeFloatVal = (v) => {
+            if (v === 'undefined' || v === 'null' || v === '' || v === undefined) return 0;
+            const n = parseFloat(v);
+            return isNaN(n) ? 0 : n;
+        };
 
         const { coluna_id, titulo, descricao, prioridade, dificuldade, responsavel_id, cliente_id, data_limite, horas_estimadas, valor, tipo_movimento } = req.body;
 
-        let finalColunaId = safeInt(coluna_id);
+        let finalColunaId = safeIntVal(coluna_id);
 
-        // FAILSAFE: Se não tem coluna, busca a primeira do usuário
+        // 2. Fallback de Coluna (CRITICO)
         if (!finalColunaId) {
-            console.log('⚠️ [KANBAN] Coluna ID inválido. Buscando padrão...');
-            const { data: cols } = await supabase.from('kanban_colunas').select('id').eq('user_id', req.user.userId).order('ordem').limit(1);
+            console.log('⚠️ [KANBAN] Sem coluna definida. Buscando padrão...');
+            const { data: cols } = await supabase
+                .from('kanban_colunas')
+                .select('id')
+                .eq('user_id', req.user.userId)
+                .order('ordem', { ascending: true })
+                .limit(1);
+
             if (cols && cols.length > 0) {
                 finalColunaId = cols[0].id;
             } else {
-                throw new Error('Nenhuma coluna disponível para criar o card.');
+                return res.status(400).json({ error: 'Você precisa criar uma coluna no Kanban antes de adicionar tarefas.' });
             }
         }
 
+        // 3. Payload Blindado
         const payload = {
             user_id: req.user.userId,
             coluna_id: finalColunaId,
-            titulo,
-            descricao,
+            titulo: titulo || 'Nova Tarefa',
+            descricao: descricao || '',
             prioridade: prioridade || 'media',
-            dificuldade,
-            responsavel_id: safeInt(responsavel_id),
-            cliente_id: safeInt(cliente_id),
+            dificuldade: dificuldade || 'medio',
+            responsavel_id: safeIntVal(responsavel_id),
+            cliente_id: safeIntVal(cliente_id),
             data_limite: (data_limite && data_limite !== 'undefined') ? data_limite : null,
-            horas_estimadas: safeFloat(horas_estimadas),
-            valor: safeFloat(valor),
+            horas_estimadas: safeFloatVal(horas_estimadas),
+            valor: safeFloatVal(valor),
             tipo_movimento: tipo_movimento || 'saida'
         };
 
-        console.log('🛡️ [PAYLOAD CLEANED]:', JSON.stringify(payload));
-
-        const { data, error } = await supabase.from('kanban_cards').insert([payload]).select();
+        // 4. Insert Direto
+        const { data, error } = await supabase.from('kanban_cards').insert([payload]).select().single();
 
         if (error) {
             console.error('❌ [KANBAN DB ERROR]:', error);
             throw error;
         }
-        res.json(data[0]);
+        res.json(data);
+
     } catch (err) {
-        console.error('❌ [KANBAN SERVER ERROR]:', err.message);
-        res.status(500).send('Erro ao criar tarefa. Verifique o console.');
+        console.error('❌ [KANBAN FATAL]:', err.message);
+        res.status(500).send('Erro ao criar tarefa (Backend Manual).');
     }
 });
 
@@ -238,10 +256,23 @@ router.put('/cards/:id/move', authenticateToken, async (req, res) => {
     }
 });
 
-// PUT /api/kanban/cards/:id - update
+// PUT /api/kanban/cards/:id - update (BRUTE FORCE FIX)
 router.put('/cards/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Helpers Locais
+        const safeIntVal = (v) => {
+            if (v === 'undefined' || v === 'null' || v === '' || v === undefined) return null;
+            const n = parseInt(v, 10);
+            return isNaN(n) ? null : n;
+        };
+        const safeFloatVal = (v) => {
+            if (v === 'undefined' || v === 'null' || v === '' || v === undefined) return 0;
+            const n = parseFloat(v);
+            return isNaN(n) ? 0 : n;
+        };
+
         const { titulo, descricao, prioridade, dificuldade, valor, data_conclusao, tipo_movimento, responsavel_id, cliente_id, horas_estimadas } = req.body;
 
         const updatePayload = {
@@ -249,12 +280,12 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
             descricao,
             prioridade,
             dificuldade,
-            valor: safeFloat(valor),
+            valor: safeFloatVal(valor),
             data_conclusao: (data_conclusao && data_conclusao !== 'undefined') ? data_conclusao : null,
             tipo_movimento,
-            responsavel_id: safeInt(responsavel_id),
-            cliente_id: safeInt(cliente_id),
-            horas_estimadas: safeFloat(horas_estimadas)
+            responsavel_id: safeIntVal(responsavel_id),
+            cliente_id: safeIntVal(cliente_id),
+            horas_estimadas: safeFloatVal(horas_estimadas)
         };
 
         const { data, error } = await supabase
@@ -262,12 +293,13 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
             .update(updatePayload)
             .eq('id', id)
             .eq('user_id', req.user.userId)
-            .select();
+            .select()
+            .single();
 
         if (error) throw error;
-        res.json(data[0]);
+        res.json(data);
     } catch (err) {
-        console.error('Erro update card (catch):', err);
+        console.error('Erro update card (brute):', err);
         res.status(500).json({ error: err.message || 'Erro desconhecido' });
     }
 });
