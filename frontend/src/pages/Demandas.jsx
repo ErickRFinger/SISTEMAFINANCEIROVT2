@@ -360,9 +360,19 @@ export default function Demandas() {
             // Ensure payload is safe
             const payload = {
                 ...cardFormData,
+                // Sanitize IDs
+                coluna_id: (cardFormData.coluna_id === '' || cardFormData.coluna_id === undefined || cardFormData.coluna_id === 'undefined')
+                    ? (columns[0]?.id || null)
+                    : cardFormData.coluna_id,
+
                 valor: (cardFormData.valor === '' || cardFormData.valor === undefined) ? 0 : cardFormData.valor,
+
                 responsavel_id: (cardFormData.responsavel_id === '' || cardFormData.responsavel_id === 'undefined') ? null : cardFormData.responsavel_id,
-                cliente_id: (cardFormData.cliente_id === '' || cardFormData.cliente_id === 'undefined') ? null : cardFormData.cliente_id
+
+                cliente_id: (cardFormData.cliente_id === '' || cardFormData.cliente_id === 'undefined') ? null : cardFormData.cliente_id,
+
+                dificuldade: cardFormData.dificuldade || 'medio',
+                prioridade: cardFormData.prioridade || 'media'
             };
 
             if (editingCard) {
