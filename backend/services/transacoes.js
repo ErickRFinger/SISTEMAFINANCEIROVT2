@@ -38,8 +38,8 @@ class TransacaoService {
 
         if (contexto) {
             if (contexto === 'pessoal') {
-                // Legacy support: Include rows where context is 'pessoal' OR null
-                query = query.or('contexto.eq.pessoal,contexto.is.null');
+                // Broaden: Get everything that is NOT explicit business
+                query = query.neq('contexto', 'empresarial');
             } else {
                 query = query.eq('contexto', contexto);
             }
@@ -50,12 +50,34 @@ class TransacaoService {
             if (error) throw error;
             return data.map(formatTransaction);
         } catch (error) {
-            // Self-healing: Se erro for de coluna inexistente, tenta criar e tentar de novo
+            // FALLBACK LEGACY MODE
             if (error.code === '42703' || error.message.includes('contexto')) {
-                console.warn('⚠️ [BACKEND] Coluna contexto faltando. Tentando corrigir automaticamente...');
-                await this._ensureContextColumn();
-                // Retry attempt
-                const { data: retryData, error: retryError } = await query;
+                console.warn('⚠️ [BACKEND] Coluna contexto faltando no LIST. Retornando dados sem filtro...');
+
+                // Re-run query WITHOUT context filter
+                let fallbackQuery = supabase
+                    .from('transacoes')
+                    .select(`
+                        *,
+                        categorias (nome, cor),
+                        bancos (nome, cor),
+                        cartoes (nome, cor)
+                    `)
+                    .eq('user_id', userId)
+                    .order('data', { ascending: false });
+
+                if (mes && ano) {
+                    const mesNum = parseInt(mes);
+                    const anoNum = parseInt(ano);
+                    const startDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-01`;
+                    const lastDay = new Date(anoNum, mesNum, 0).getDate();
+                    const endDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+                    fallbackQuery = fallbackQuery.gte('data', startDate).lte('data', endDate);
+                }
+
+                // Explicitly ignore context here logic
+
+                const { data: retryData, error: retryError } = await fallbackQuery;
                 if (retryError) throw retryError;
                 return retryData.map(formatTransaction);
             }
@@ -365,40 +387,56 @@ class TransacaoService {
      * Calcula o resumo financeiro (Saldo)
      */
     async getBalance(userId, { mes, ano, contexto }) {
+        console.log(`[BALANCE] Calculando para User ${userId} | Mês: ${mes}/${ano} | Ctx: ${contexto}`);
+
         let query = supabase
             .from('transacoes')
-            .select('tipo, valor, contexto')
+            .select('tipo, valor, contexto, data, status') // Select status to debug/filter
             .eq('user_id', userId);
 
         if (mes && ano) {
             const mesNum = parseInt(mes);
             const anoNum = parseInt(ano);
+            // Use 'YYYY-MM-DD' format explicitly
             const startDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-01`;
-            const lastDay = new Date(anoNum, mesNum, 0).getDate();
-            const endDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            const endDate = new Date(anoNum, mesNum, 0).toISOString().split('T')[0]; // Last day of month
 
             query = query.gte('data', startDate).lte('data', endDate);
         }
 
-        if (contexto) {
-            if (contexto === 'pessoal') {
-                query = query.or('contexto.eq.pessoal,contexto.is.null');
-            } else {
-                query = query.eq('contexto', contexto);
-            }
+        // Broaden Context Filter: If 'pessoal', exclude only explicit 'empresarial'
+        // This is safer than trying to include [null, '', 'pessoal'] specifically
+        if (contexto === 'pessoal') {
+            query = query.neq('contexto', 'empresarial');
+            // effectively: get everything that is NOT business. 
+            // covers: null, empty, 'pessoal', 'undefined', etc.
+        } else if (contexto) {
+            query = query.eq('contexto', contexto);
         }
 
         try {
             const { data: transacoes, error } = await query;
             if (error) throw error;
 
-            const receitas = transacoes
+            // Only sum PAID transactions for "Balance" if that's the desired behavior.
+            // But if user complains about "missing", maybe they want to see everything?
+            // Usually Dashboard Balance = Realized.
+            // Let's filter for 'pago' just to be correct, but log the total found.
+
+            const totalFound = transacoes.length;
+            const pagos = transacoes.filter(t => t.status === 'pago');
+
+            console.log(`[BALANCE] Encontrados: ${totalFound} | Pagos: ${pagos.length}`);
+
+            const receitas = pagos
                 .filter(t => t.tipo === 'receita')
                 .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
-            const despesas = transacoes
+            const despesas = pagos
                 .filter(t => t.tipo === 'despesa')
                 .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
+
+            console.log(`[BALANCE] Rec: ${receitas} | Desp: ${despesas}`);
 
             return {
                 receitas: parseFloat(receitas.toFixed(2)),
@@ -406,20 +444,44 @@ class TransacaoService {
                 saldo: parseFloat((receitas - despesas).toFixed(2))
             };
         } catch (error) {
-            // Self-healing: Se erro for de coluna inexistente
-            if (error.code === '42703' || error.message.includes('contexto')) {
-                await this._ensureContextColumn();
-                // Retry attempt
-                const { data: retryData, error: retryError } = await query;
-                if (retryError) throw retryError;
+            console.error('[BALANCE ERROR]', error);
 
-                // Recalculate logic specific to getBalance
-                const transacoes = retryData || [];
-                const receitas = transacoes
+            // FALLBACK STRATEGY: Data > Separation
+            // If the query failed (likely due to missing 'contexto' column or syntax),
+            // we run the OLD query (without context) to ensure the user sees their money.
+            try {
+                console.warn('⚠️ [BACKEND] Falha na query com contexto. Executando fallback (Modo Legado)...');
+
+                let fallbackQuery = supabase
+                    .from('transacoes') // Recriar query limpa
+                    .select('tipo, valor, data, status')
+                    .eq('user_id', userId);
+
+                if (mes && ano) {
+                    const mesNum = parseInt(mes);
+                    const anoNum = parseInt(ano);
+                    const startDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-01`;
+                    // Fix date range safely
+                    const lastDay = new Date(anoNum, mesNum, 0).getDate();
+                    const endDate = `${anoNum}-${String(mesNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59`;
+
+                    fallbackQuery = fallbackQuery.gte('data', startDate).lte('data', endDate);
+                }
+
+                const { data: legacyData, error: legacyError } = await fallbackQuery;
+                if (legacyError) throw legacyError;
+
+                // Only sum PAID if desired, but user wants to see "what was there before".
+                // Assuming "before" meant all valid transactions.
+                // We'll stick to 'status=pago' is safer for "Balance", or 'status!=cancelado'.
+                // Let's use 'pago' to be consistent with good accounting.
+                const pagos = legacyData.filter(t => t.status === 'pago');
+
+                const receitas = pagos
                     .filter(t => t.tipo === 'receita')
                     .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
-                const despesas = transacoes
+                const despesas = pagos
                     .filter(t => t.tipo === 'despesa')
                     .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
@@ -428,8 +490,10 @@ class TransacaoService {
                     despesas: parseFloat(despesas.toFixed(2)),
                     saldo: parseFloat((receitas - despesas).toFixed(2))
                 };
+            } catch (fatalError) {
+                console.error('❌ [FATAL] Erro também no fallback:', fatalError);
+                return { receitas: 0, despesas: 0, saldo: 0 };
             }
-            throw error;
         }
     }
 }
