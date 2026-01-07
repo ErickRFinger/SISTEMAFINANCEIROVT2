@@ -1,6 +1,6 @@
+import 'dotenv/config'; // Correct ESM usage
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import supabase from './database/db.js';
 
 // Rotas
@@ -20,8 +20,6 @@ import produtosRoutes from './routes/produtos.js';
 import kanbanRoutes from './routes/kanban.js';
 import clientesRoutes from './routes/clientes.js';
 import vendasRoutes from './routes/vendas.js';
-
-dotenv.config();
 
 // Verificar variáveis de ambiente críticas
 const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
@@ -96,6 +94,9 @@ app.use('/api/cartoes', cartoesRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/funcionarios', funcionariosRoutes);
 app.use('/api/produtos', produtosRoutes);
+app.use('/api/kanban', kanbanRoutes);
+app.use('/api/clientes', clientesRoutes);
+app.use('/api/vendas', vendasRoutes);
 
 // import { generateFinancialAdvice } from './services/aiService.js'; // REMOVIDO: Import estático causava erro
 import { authenticateToken } from './middleware/auth.js';
@@ -134,9 +135,5 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
   });
 }
-
-app.use('/api/kanban', kanbanRoutes);
-app.use('/api/clientes', clientesRoutes);
-app.use('/api/vendas', vendasRoutes);
 
 export default app;

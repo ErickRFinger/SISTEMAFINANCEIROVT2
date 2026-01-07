@@ -24,7 +24,6 @@ router.get('/columns', authenticateToken, async (req, res) => {
         }
 
         // 2. Fetch Cards for all columns
-        // NOTE: Verificando se o user_id está sendo passado corretamente
         const { data: cards, error: cardError } = await supabase
             .from('kanban_cards')
             .select(`
@@ -39,8 +38,6 @@ router.get('/columns', authenticateToken, async (req, res) => {
             console.error('[KANBAN] Erro cards:', cardError);
             throw cardError;
         }
-
-        console.log(`[KANBAN] Encontrados ${columns?.length} colunas e ${cards?.length} cards.`);
 
         // 3. Structure data: Column -> Cards[]
         const boardData = columns.map(col => ({
@@ -119,9 +116,6 @@ router.delete('/columns/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
 
-        // NOTE: Postgres cascade might handle cards, otherwise we should check.
-        // Assuming user wants to delete column and its cards.
-
         const { error } = await supabase
             .from('kanban_colunas')
             .delete()
@@ -136,14 +130,14 @@ router.delete('/columns/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// POST /api/kanban/setup - Create Default Columns (Setup)
+// POST /api/kanban/setup - Create Default Columns
 router.post('/setup', authenticateToken, async (req, res) => {
     try {
         const defaultCols = [
-            { titulo: 'A Fazer', ordem: 1, cor: '#fbbf24' },      // Yellow
-            { titulo: 'Em Execução', ordem: 2, cor: '#3b82f6' },  // Blue
-            { titulo: 'Bloqueado', ordem: 3, cor: '#ef4444' },    // Red
-            { titulo: 'Concluído', ordem: 4, cor: '#10b981' }     // Green
+            { titulo: 'A Fazer', ordem: 1, cor: '#fbbf24' },
+            { titulo: 'Em Execução', ordem: 2, cor: '#3b82f6' },
+            { titulo: 'Bloqueado', ordem: 3, cor: '#ef4444' },
+            { titulo: 'Concluído', ordem: 4, cor: '#10b981' }
         ];
 
         const inserts = defaultCols.map(col => ({
@@ -166,6 +160,10 @@ router.post('/setup', authenticateToken, async (req, res) => {
 
 // --- CARDS ---
 
+// Helper to sanitize IDs and Numbers
+const sanitizeId = (val) => (val && val !== 'undefined' && val !== '') ? val : null;
+const sanitizeNum = (val) => (val && val !== 'undefined' && val !== '') ? parseFloat(val) : 0;
+
 // POST /api/kanban/cards - Create Card
 router.post('/cards', authenticateToken, async (req, res) => {
     try {
@@ -180,11 +178,11 @@ router.post('/cards', authenticateToken, async (req, res) => {
                 descricao,
                 prioridade: prioridade || 'media',
                 dificuldade,
-                responsavel_id,
-                cliente_id,
-                data_limite,
-                horas_estimadas,
-                valor: (valor === '' || valor === undefined) ? 0 : parseFloat(valor),
+                responsavel_id: sanitizeId(responsavel_id),
+                cliente_id: sanitizeId(cliente_id),
+                data_limite: sanitizeId(data_limite), // Date string or null
+                horas_estimadas: sanitizeNum(horas_estimadas),
+                valor: sanitizeNum(valor), // Fix invalid syntax integer/numeric
                 tipo_movimento: tipo_movimento || 'saida'
             }])
             .select();
@@ -197,13 +195,12 @@ router.post('/cards', authenticateToken, async (req, res) => {
     }
 });
 
-// PUT /api/kanban/cards/:id/move - Move Card (Change Column & Position)
+// PUT /api/kanban/cards/:id/move - Move Card
 router.put('/cards/:id/move', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { nova_coluna_id, nova_posicao } = req.body;
 
-        // 1. Get current card details to know old column
         const { data: currentCard, error: fetchError } = await supabase
             .from('kanban_cards')
             .select('*')
@@ -215,23 +212,7 @@ router.put('/cards/:id/move', authenticateToken, async (req, res) => {
 
         const oldColumnId = currentCard.coluna_id;
         const newColumnId = nova_coluna_id || oldColumnId;
-        const newPos = nova_posicao !== undefined ? nova_posicao : 0; // Default to top if not specified
-
-        // 2. If moving to a NEW column, or simply reordering in SAME column
-        // Strategy: We will perform a simple update.
-        // For a robust implementation we might shift other cards, but for "functional" usage:
-        // Ideally we shift cards in the destination column >= newPos by +1.
-
-        // Shift existing cards in destination to make space
-        await supabase.rpc('increment_card_position', {
-            p_coluna_id: newColumnId,
-            p_min_pos: newPos,
-            p_user_id: req.user.userId
-        });
-        // Note: RPC call assumes we create a function or we do it via raw query.
-        // Since we can't easily add RPCs without more SQL access, let's do a simpler "Update and let frontend sort equal values" approach,
-        // OR simpler: Just update the card.
-        // BETTER: Update the card, then re-normalize positions for that column.
+        const newPos = nova_posicao !== undefined ? nova_posicao : 0;
 
         const { data, error } = await supabase
             .from('kanban_cards')
@@ -255,19 +236,25 @@ router.put('/cards/:id/move', authenticateToken, async (req, res) => {
 router.put('/cards/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const { titulo, descricao, prioridade, dificuldade, valor, data_conclusao, tipo_movimento } = req.body;
+        const { titulo, descricao, prioridade, dificuldade, valor, data_conclusao, tipo_movimento, responsavel_id, cliente_id, horas_estimadas } = req.body;
+
+        // Construct update object to handle potential "undefined" strings
+        const updatePayload = {
+            titulo,
+            descricao,
+            prioridade,
+            dificuldade,
+            valor: sanitizeNum(valor),
+            data_conclusao: sanitizeId(data_conclusao),
+            tipo_movimento,
+            responsavel_id: sanitizeId(responsavel_id),
+            cliente_id: sanitizeId(cliente_id),
+            horas_estimadas: sanitizeNum(horas_estimadas)
+        };
 
         const { data, error } = await supabase
             .from('kanban_cards')
-            .update({
-                titulo,
-                descricao,
-                prioridade,
-                dificuldade,
-                valor: (valor === '' || valor === undefined) ? 0 : parseFloat(valor),
-                data_conclusao,
-                tipo_movimento
-            })
+            .update(updatePayload)
             .eq('id', id)
             .eq('user_id', req.user.userId)
             .select();
@@ -279,8 +266,7 @@ router.put('/cards/:id', authenticateToken, async (req, res) => {
         res.json(data[0]);
     } catch (err) {
         console.error('Erro update card (catch):', err);
-        const msg = err.message || 'Erro desconhecido';
-        res.status(500).json({ error: msg });
+        res.status(500).json({ error: err.message || 'Erro desconhecido' });
     }
 });
 

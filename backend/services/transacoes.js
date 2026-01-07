@@ -37,7 +37,12 @@ class TransacaoService {
         }
 
         if (contexto) {
-            query = query.eq('contexto', contexto);
+            if (contexto === 'pessoal') {
+                // Legacy support: Include rows where context is 'pessoal' OR null
+                query = query.or('contexto.eq.pessoal,contexto.is.null');
+            } else {
+                query = query.eq('contexto', contexto);
+            }
         }
 
         try {
@@ -152,9 +157,6 @@ class TransacaoService {
     /**
      * Cria uma nova transação
      */
-    /**
-     * Cria uma nova transação
-     */
     async create(userId, transactionData) {
         const {
             categoria_id,
@@ -206,15 +208,10 @@ class TransacaoService {
 
         } catch (error) {
             console.warn('⚠️ [BACKEND] Erro ao criar transação completa. Tentando fallback...', error.message);
-            // Fallback logic ignored for brevity as we know migration runs, but keeps robustness if new column missing
-            // Assuming migration ran, we don't strictly need fallback for 'contexto' unless column missing errors out
             throw error;
         }
     }
 
-    /**
-     * Atualiza uma transação
-     */
     /**
      * Atualiza uma transação
      */
@@ -322,7 +319,11 @@ class TransacaoService {
             .order('data_vencimento', { ascending: true });
 
         if (contexto) {
-            query = query.eq('contexto', contexto);
+            if (contexto === 'pessoal') {
+                query = query.or('contexto.eq.pessoal,contexto.is.null');
+            } else {
+                query = query.eq('contexto', contexto);
+            }
         }
 
         const { data, error } = await query;
@@ -366,7 +367,7 @@ class TransacaoService {
     async getBalance(userId, { mes, ano, contexto }) {
         let query = supabase
             .from('transacoes')
-            .select('tipo, valor')
+            .select('tipo, valor, contexto')
             .eq('user_id', userId);
 
         if (mes && ano) {
@@ -380,7 +381,11 @@ class TransacaoService {
         }
 
         if (contexto) {
-            query = query.eq('contexto', contexto);
+            if (contexto === 'pessoal') {
+                query = query.or('contexto.eq.pessoal,contexto.is.null');
+            } else {
+                query = query.eq('contexto', contexto);
+            }
         }
 
         try {
