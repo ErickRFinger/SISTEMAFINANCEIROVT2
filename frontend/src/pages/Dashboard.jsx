@@ -265,19 +265,8 @@ export default function Dashboard() {
       </div>
 
       {error && (
-        <div className="error-message">
-          <div>
-            <strong>⚠️ Erro ao carregar dados</strong>
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>{error}</p>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => window.open(import.meta.env.VITE_API_URL + '/setup/fix-system', '_blank')} className="btn-primary btn-sm" style={{ backgroundColor: '#ef4444' }}>
-              🛠️ Corrigir Sistema
-            </button>
-            <button onClick={carregarDados} className="btn-secondary btn-sm">
-              🔄 Tentar Novamente
-            </button>
-          </div>
+        <div className="error-message" style={{ borderLeft: '4px solid #ef4444', background: '#fee2e2', color: '#b91c1c' }}>
+          <strong>⚠️ Atenção:</strong> {error}
         </div>
       )}
 
