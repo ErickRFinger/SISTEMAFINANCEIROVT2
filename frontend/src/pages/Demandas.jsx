@@ -7,7 +7,6 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    defaultDropAnimationSideEffects,
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -145,14 +144,14 @@ export default function Demandas() {
 
     // UI States
     const [loading, setLoading] = useState(true)
-    const [modalOpen, setModalOpen] = useState(false) // Card Modal
-    const [columnModalOpen, setColumnModalOpen] = useState(false) // Column Modal
+    const [modalOpen, setModalOpen] = useState(false)
+    const [columnModalOpen, setColumnModalOpen] = useState(false)
 
     // Forms
     const [editingCard, setEditingCard] = useState(null)
     const [cardFormData, setCardFormData] = useState({
         titulo: '', descricao: '', valor: '', prioridade: 'media', dificuldade: 'medio',
-        tipo_movimento: 'saida', data_conclusao: '', coluna_id: null
+        tipo_movimento: 'saida', data_conclusao: '', coluna_id: null, responsavel_id: '', cliente_id: ''
     })
 
     const [editingColumn, setEditingColumn] = useState(null)
@@ -160,7 +159,7 @@ export default function Demandas() {
 
     // Sensors
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), // Prevent accidental drags
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
@@ -179,8 +178,6 @@ export default function Demandas() {
             setLoading(false)
         }
     }
-
-    // --- DRAG HANDLERS ---
 
     const onDragStart = (event) => {
         setActiveDragId(event.active.id);
@@ -216,22 +213,17 @@ export default function Demandas() {
                 const activeColIndex = prev.findIndex((c) => c.id === activeColumn.id);
                 const overColIndex = prev.findIndex((c) => c.id === overColumn.id);
 
-                // Clone state
                 const newColumns = [...prev];
                 const activeCol = { ...newColumns[activeColIndex] };
                 const overCol = { ...newColumns[overColIndex] };
 
-                // Find card
                 const cardIndex = activeCol.cards.findIndex(c => c.id === activeId);
                 const activeCard = activeCol.cards[cardIndex];
 
-                // Remove from active
                 activeCol.cards = [...activeCol.cards];
                 activeCol.cards.splice(cardIndex, 1);
 
-                // Add to over
                 overCol.cards = [...overCol.cards];
-                // Check where to insert
                 let newIndex;
                 if (isOverCard) {
                     const overCardIndex = overCol.cards.findIndex(c => c.id === overId);
@@ -244,7 +236,6 @@ export default function Demandas() {
                     newIndex = overCol.cards.length + 1;
                 }
 
-                // Update card's column ID immediately for UI consistency
                 const updatedCard = { ...activeCard, coluna_id: overColumn.id };
                 overCol.cards.splice(newIndex, 0, updatedCard);
 
@@ -274,25 +265,20 @@ export default function Demandas() {
                     const newIndex = items.findIndex(c => c.id === overId);
                     return arrayMove(items, oldIndex, newIndex);
                 });
-                // TODO: Persist column reorder if backend supports it
             }
             return;
         }
 
         if (type === 'Card') {
-            // Logic handled in DragOver mainly, but we need to persist here
             const findColumn = (id) => {
                 const col = columns.find(c => c.id === id);
                 if (col) return col;
                 return columns.find(c => c.cards.some(card => card.id === id));
             };
 
-            const activeColumn = findColumn(activeId); // Where it ended up in state
+            const activeColumn = findColumn(activeId);
             if (activeColumn) {
-                const card = activeColumn.cards.find(c => c.id === activeId);
                 const cardIndex = activeColumn.cards.findIndex(c => c.id === activeId);
-
-                // Call API
                 await api.put(`/kanban/cards/${activeId}/move`, {
                     nova_coluna_id: activeColumn.id,
                     nova_posicao: cardIndex
@@ -300,8 +286,6 @@ export default function Demandas() {
             }
         }
     }
-
-    // --- COLUMN MANAGEMENT ---
 
     const handleCreateColumn = async () => {
         if (!columnTitle.trim()) return;
@@ -337,8 +321,6 @@ export default function Demandas() {
         setColumnModalOpen(true);
     }
 
-    // --- CARD MANAGEMENT ---
-
     const openCardModal = (card = null, columnId = null) => {
         if (card) {
             setEditingCard(card)
@@ -350,7 +332,9 @@ export default function Demandas() {
                 dificuldade: card.dificuldade || 'medio',
                 tipo_movimento: card.tipo_movimento || 'saida',
                 data_conclusao: card.data_conclusao ? card.data_conclusao.split('T')[0] : '',
-                coluna_id: card.coluna_id
+                coluna_id: card.coluna_id,
+                responsavel_id: card.responsavel_id || '',
+                cliente_id: card.cliente_id || ''
             })
         } else {
             setEditingCard(null)
@@ -362,7 +346,9 @@ export default function Demandas() {
                 dificuldade: 'medio',
                 tipo_movimento: 'saida',
                 data_conclusao: '',
-                coluna_id: columnId || columns[0]?.id
+                coluna_id: columnId || columns[0]?.id,
+                responsavel_id: '',
+                cliente_id: ''
             })
         }
         setModalOpen(true)
@@ -371,10 +357,18 @@ export default function Demandas() {
     const handleCardSubmit = async (e) => {
         e.preventDefault()
         try {
+            // Ensure payload is safe
+            const payload = {
+                ...cardFormData,
+                valor: (cardFormData.valor === '' || cardFormData.valor === undefined) ? 0 : cardFormData.valor,
+                responsavel_id: (cardFormData.responsavel_id === '' || cardFormData.responsavel_id === 'undefined') ? null : cardFormData.responsavel_id,
+                cliente_id: (cardFormData.cliente_id === '' || cardFormData.cliente_id === 'undefined') ? null : cardFormData.cliente_id
+            };
+
             if (editingCard) {
-                await api.put(`/kanban/cards/${editingCard.id}`, cardFormData)
+                await api.put(`/kanban/cards/${editingCard.id}`, payload)
             } else {
-                await api.post('/kanban/cards', { ...cardFormData })
+                await api.post('/kanban/cards', payload)
             }
             setModalOpen(false)
             fetchKanban()
@@ -426,7 +420,6 @@ export default function Demandas() {
                             />
                         ))}
                     </SortableContext>
-                    {/* Placeholder for "Add Column" at end of list if desired */}
                 </div>
 
                 <DragOverlay>
@@ -444,7 +437,6 @@ export default function Demandas() {
                 </DragOverlay>
             </DndContext>
 
-            {/* Column Modal */}
             {columnModalOpen && (
                 <div className="trello-modal-overlay" onClick={(e) => e.target.className === 'trello-modal-overlay' && setColumnModalOpen(false)}>
                     <div className="trello-modal small">
@@ -464,7 +456,6 @@ export default function Demandas() {
                 </div>
             )}
 
-            {/* Card Modal (Same as before but simplified) */}
             {modalOpen && (
                 <div className="trello-modal-overlay" onClick={(e) => e.target.className === 'trello-modal-overlay' && setModalOpen(false)}>
                     <div className="trello-modal">

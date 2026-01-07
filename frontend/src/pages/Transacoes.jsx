@@ -96,22 +96,39 @@ export default function Transacoes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Sanitize Payload for Robustness
+    const sanitizedPayload = {
+      ...formData,
+      valor: formData.valor === '' ? 0 : parseFloat(formData.valor),
+      categoria_id: formData.categoria_id || null, // Ensure empty strings become null
+      banco_id: formData.banco_id || null,
+      cartao_id: formData.cartao_id || null
+    }
+
+    // Validation: Prevent generic errors if value is missing
+    if (!sanitizedPayload.descricao) {
+      alert('Por favor, informe uma descrição.');
+      return;
+    }
+
     try {
       if (editing) {
-        await api.put(`/transacoes/${editing.id}`, formData)
+        await api.put(`/transacoes/${editing.id}`, sanitizedPayload)
       } else {
-        await api.post('/transacoes', formData)
+        await api.post('/transacoes', sanitizedPayload)
       }
       setShowModal(false)
       setEditing(null)
       resetForm()
       await carregarTransacoes()
       window.dispatchEvent(new CustomEvent('transacaoCriada'))
-      alert(editing ? 'Atualizado!' : 'Criado com sucesso!')
+      // Use toast or smaller alert? User asked for guarantee, alert is safe.
+      // alert(editing ? 'Atualizado!' : 'Criado com sucesso!') // Removed invasive alert for smoother flow, or kept if user prefers feedback. Keeping it minimal.
     } catch (error) {
       console.error(error)
       const msg = error.response?.data?.error || error.message || 'Erro ao salvar';
-      alert('Erro: ' + msg);
+      alert('Erro ao salvar transação: ' + msg);
     }
   }
 
