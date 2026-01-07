@@ -1,24 +1,168 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    defaultDropAnimationSideEffects,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    horizontalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import api from '../services/api'
-import './DemandasStyles.css' // Updated to new Trello-style CSS
+import './DemandasStyles.css'
+
+// --- COMPONENTS ---
+
+const SortableCard = ({ card, onClick }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
+        id: card.id,
+        data: {
+            type: 'Card',
+            card,
+        },
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.3 : 1,
+    };
+
+    const getPriorityLabel = (priority) => {
+        switch (priority) {
+            case 'alta': return 'label-high';
+            case 'media': return 'label-medium';
+            case 'baixa': return 'label-low';
+            default: return 'label-low';
+        }
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className="trello-card"
+            onClick={() => onClick(card)}
+        >
+            <div className="card-labels">
+                <span className={`card-label ${getPriorityLabel(card.prioridade)}`} title={`Prioridade: ${card.prioridade}`} />
+            </div>
+            <h4 className="card-title">{card.titulo}</h4>
+            <div className="card-footer">
+                <div className="card-meta">
+                    <div className="meta-item" title="Tipo">
+                        {card.tipo_movimento === 'entrada' ? '📈' : '📉'}
+                    </div>
+                    {Number(card.valor) > 0 && (
+                        <span className={`valor-badge ${card.tipo_movimento}`}>
+                            R$ {Number(card.valor).toLocaleString('pt-BR')}
+                        </span>
+                    )}
+                </div>
+                <div className="card-avatar"><span>👤</span></div>
+            </div>
+        </div>
+    );
+};
+
+const SortableColumn = ({ column, cards, onEditColumn, onDeleteColumn, onAddCard, onCardClick }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
+        id: column.id,
+        data: {
+            type: 'Column',
+            column,
+        },
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    const cardIds = useMemo(() => cards.map((c) => c.id), [cards]);
+
+    return (
+        <div ref={setNodeRef} style={style} className="kanban-column">
+            <div className="column-header" {...attributes} {...listeners}>
+                <h3 className="column-title">
+                    {column.titulo}
+                    <span className="column-count">{cards.length}</span>
+                </h3>
+                <div className="column-actions">
+                    <button className="btn-icon" onClick={(e) => { e.stopPropagation(); onEditColumn(column); }}>✎</button>
+                    <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); onDeleteColumn(column.id); }}>×</button>
+                </div>
+            </div>
+
+            <div className="column-body">
+                <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
+                    {cards.map((card) => (
+                        <SortableCard key={card.id} card={card} onClick={onCardClick} />
+                    ))}
+                </SortableContext>
+            </div>
+            <div className="column-footer">
+                <button className="btn-add-card" onClick={() => onAddCard(column.id)}>
+                    + Adicionar card
+                </button>
+            </div>
+        </div>
+    );
+};
+
 
 export default function Demandas() {
     const [columns, setColumns] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [modalOpen, setModalOpen] = useState(false)
-    const [editingCard, setEditingCard] = useState(null)
-    const [viewMode, setViewMode] = useState('kanban') // 'kanban' or 'list'
+    const [activeDragId, setActiveDragId] = useState(null)
+    const [activeDragData, setActiveDragData] = useState(null)
 
-    // Form
-    const [formData, setFormData] = useState({
-        titulo: '',
-        descricao: '',
-        valor: '',
-        prioridade: 'media',
-        dificuldade: 'medio',
-        tipo_movimento: 'saida',
-        data_conclusao: ''
+    // UI States
+    const [loading, setLoading] = useState(true)
+    const [modalOpen, setModalOpen] = useState(false) // Card Modal
+    const [columnModalOpen, setColumnModalOpen] = useState(false) // Column Modal
+
+    // Forms
+    const [editingCard, setEditingCard] = useState(null)
+    const [cardFormData, setCardFormData] = useState({
+        titulo: '', descricao: '', valor: '', prioridade: 'media', dificuldade: 'medio',
+        tipo_movimento: 'saida', data_conclusao: '', coluna_id: null
     })
+
+    const [editingColumn, setEditingColumn] = useState(null)
+    const [columnTitle, setColumnTitle] = useState('')
+
+    // Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), // Prevent accidental drags
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
 
     useEffect(() => {
         fetchKanban()
@@ -36,77 +180,201 @@ export default function Demandas() {
         }
     }
 
-    // Drag & Drop Handler (Native HTML5)
-    const handleDrop = async (cardId, novaColunaId) => {
-        try {
-            // Optimistic update locally
-            const cardIdStr = String(cardId);
-            const sourceCol = columns.find(col => col.cards.some(c => String(c.id) === cardIdStr));
-            if (!sourceCol || sourceCol.id === novaColunaId) return;
+    // --- DRAG HANDLERS ---
 
-            // Move card in UI state first
-            setColumns(prev => prev.map(col => {
-                if (col.id === sourceCol.id) {
-                    return { ...col, cards: col.cards.filter(c => String(c.id) !== cardIdStr) };
-                }
-                if (col.id === novaColunaId) {
-                    const card = sourceCol.cards.find(c => String(c.id) === cardIdStr);
-                    return { ...col, cards: [...col.cards, { ...card, coluna_id: novaColunaId }] };
-                }
-                return col;
-            }));
+    const onDragStart = (event) => {
+        setActiveDragId(event.active.id);
+        setActiveDragData(event.active.data.current);
+    }
 
-            // Call API
-            await api.put(`/kanban/cards/${cardId}/move`, {
-                nova_coluna_id: novaColunaId
+    const onDragOver = (event) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeId = active.id;
+        const overId = over.id;
+        const isActiveCard = active.data.current?.type === 'Card';
+        const isOverCard = over.data.current?.type === 'Card';
+        const isOverColumn = over.data.current?.type === 'Column';
+
+        if (!isActiveCard) return;
+
+        // Find source and destination columns
+        const findColumn = (id) => {
+            const col = columns.find(c => c.id === id);
+            if (col) return col;
+            return columns.find(c => c.cards.some(card => card.id === id));
+        };
+
+        const activeColumn = findColumn(activeId);
+        const overColumn = findColumn(overId);
+
+        if (!activeColumn || !overColumn) return;
+
+        if (activeColumn.id !== overColumn.id) {
+            setColumns((prev) => {
+                const activeColIndex = prev.findIndex((c) => c.id === activeColumn.id);
+                const overColIndex = prev.findIndex((c) => c.id === overColumn.id);
+
+                // Clone state
+                const newColumns = [...prev];
+                const activeCol = { ...newColumns[activeColIndex] };
+                const overCol = { ...newColumns[overColIndex] };
+
+                // Find card
+                const cardIndex = activeCol.cards.findIndex(c => c.id === activeId);
+                const activeCard = activeCol.cards[cardIndex];
+
+                // Remove from active
+                activeCol.cards = [...activeCol.cards];
+                activeCol.cards.splice(cardIndex, 1);
+
+                // Add to over
+                overCol.cards = [...overCol.cards];
+                // Check where to insert
+                let newIndex;
+                if (isOverCard) {
+                    const overCardIndex = overCol.cards.findIndex(c => c.id === overId);
+                    const isBelowOverItem = over &&
+                        active.rect.current.translated &&
+                        active.rect.current.translated.top > over.rect.top + over.rect.height;
+                    const modifier = isBelowOverItem ? 1 : 0;
+                    newIndex = overCardIndex >= 0 ? overCardIndex + modifier : overCol.cards.length + 1;
+                } else {
+                    newIndex = overCol.cards.length + 1;
+                }
+
+                // Update card's column ID immediately for UI consistency
+                const updatedCard = { ...activeCard, coluna_id: overColumn.id };
+                overCol.cards.splice(newIndex, 0, updatedCard);
+
+                newColumns[activeColIndex] = activeCol;
+                newColumns[overColIndex] = overCol;
+
+                return newColumns;
             });
-            // Background refresh to confirm consistency
-            fetchKanban();
-        } catch (error) {
-            console.error('Erro ao mover card:', error);
-            // Revert on error would be ideal, but simply refetching works too
-            fetchKanban();
         }
     };
 
-    const openModal = (card = null) => {
+    const onDragEnd = async (event) => {
+        const { active, over } = event;
+        setActiveDragId(null);
+        setActiveDragData(null);
+
+        if (!over) return;
+
+        const activeId = active.id;
+        const overId = over.id;
+        const type = active.data.current?.type;
+
+        if (type === 'Column') {
+            if (activeId !== overId) {
+                setColumns((items) => {
+                    const oldIndex = items.findIndex(c => c.id === activeId);
+                    const newIndex = items.findIndex(c => c.id === overId);
+                    return arrayMove(items, oldIndex, newIndex);
+                });
+                // TODO: Persist column reorder if backend supports it
+            }
+            return;
+        }
+
+        if (type === 'Card') {
+            // Logic handled in DragOver mainly, but we need to persist here
+            const findColumn = (id) => {
+                const col = columns.find(c => c.id === id);
+                if (col) return col;
+                return columns.find(c => c.cards.some(card => card.id === id));
+            };
+
+            const activeColumn = findColumn(activeId); // Where it ended up in state
+            if (activeColumn) {
+                const card = activeColumn.cards.find(c => c.id === activeId);
+                const cardIndex = activeColumn.cards.findIndex(c => c.id === activeId);
+
+                // Call API
+                await api.put(`/kanban/cards/${activeId}/move`, {
+                    nova_coluna_id: activeColumn.id,
+                    nova_posicao: cardIndex
+                });
+            }
+        }
+    }
+
+    // --- COLUMN MANAGEMENT ---
+
+    const handleCreateColumn = async () => {
+        if (!columnTitle.trim()) return;
+        try {
+            if (editingColumn) {
+                await api.put(`/kanban/columns/${editingColumn.id}`, { titulo: columnTitle });
+            } else {
+                await api.post('/kanban/columns', { titulo: columnTitle });
+            }
+            setColumnModalOpen(false);
+            setColumnTitle('');
+            setEditingColumn(null);
+            fetchKanban();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const handleDeleteColumn = async (id) => {
+        if (window.confirm('Tem certeza? Todos os cards desta coluna serão apagados.')) {
+            try {
+                await api.delete(`/kanban/columns/${id}`);
+                fetchKanban();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    }
+
+    const openColumnModal = (col = null) => {
+        setEditingColumn(col);
+        setColumnTitle(col ? col.titulo : '');
+        setColumnModalOpen(true);
+    }
+
+    // --- CARD MANAGEMENT ---
+
+    const openCardModal = (card = null, columnId = null) => {
         if (card) {
             setEditingCard(card)
-            setFormData({
+            setCardFormData({
                 titulo: card.titulo,
                 descricao: card.descricao || '',
                 valor: card.valor || '',
                 prioridade: card.prioridade || 'media',
                 dificuldade: card.dificuldade || 'medio',
                 tipo_movimento: card.tipo_movimento || 'saida',
-                data_conclusao: card.data_conclusao ? card.data_conclusao.split('T')[0] : ''
+                data_conclusao: card.data_conclusao ? card.data_conclusao.split('T')[0] : '',
+                coluna_id: card.coluna_id
             })
         } else {
             setEditingCard(null)
-            setFormData({
+            setCardFormData({
                 titulo: '',
                 descricao: '',
                 valor: '',
                 prioridade: 'media',
                 dificuldade: 'medio',
                 tipo_movimento: 'saida',
-                data_conclusao: ''
+                data_conclusao: '',
+                coluna_id: columnId || columns[0]?.id
             })
         }
         setModalOpen(true)
     }
 
-    const handleSubmit = async (e) => {
+    const handleCardSubmit = async (e) => {
         e.preventDefault()
         try {
             if (editingCard) {
-                await api.put(`/kanban/cards/${editingCard.id}`, formData)
+                await api.put(`/kanban/cards/${editingCard.id}`, cardFormData)
             } else {
-                if (columns.length === 0) return alert('Sem colunas!')
-                await api.post('/kanban/cards', {
-                    coluna_id: columns[0].id,
-                    ...formData
-                })
+                await api.post('/kanban/cards', { ...cardFormData })
             }
             setModalOpen(false)
             fetchKanban()
@@ -115,171 +383,103 @@ export default function Demandas() {
         }
     }
 
-    const handleDelete = async (id) => {
+    const handleDeleteCard = async (id) => {
         if (window.confirm('Excluir este card?')) {
             await api.delete(`/kanban/cards/${id}`)
-            fetchKanban()
             setModalOpen(false)
-        }
-    }
-
-    // Helper for Priority Colors
-    const getPriorityLabel = (priority) => {
-        switch (priority) {
-            case 'alta': return 'label-high';
-            case 'media': return 'label-medium';
-            case 'baixa': return 'label-low';
-            default: return 'label-low';
+            fetchKanban()
         }
     }
 
     return (
         <div className="kanban-page">
-            {/* Trello-like Header */}
             <header className="kanban-header">
                 <div className="header-title">
                     <h1>📋 Quadro de Demandas</h1>
-                    <span className="header-meta">| Área de Trabalho</span>
                 </div>
                 <div className="header-actions">
-                    <button className="btn-trello" onClick={fetchKanban}>
-                        🔄 Atualizar
-                    </button>
-                    {/* View Toggle Logic could go here */}
-                    <button className="btn-trello primary" onClick={() => openModal()}>
-                        + Novo Card
-                    </button>
+                    <button className="btn-trello" onClick={fetchKanban}>🔄 Atualizar</button>
+                    <button className="btn-trello" onClick={() => openColumnModal()}>+ Add Coluna</button>
                 </div>
             </header>
 
-            {/* Main Board Area */}
-            {loading && columns.length === 0 ? (
-                <div className="loading-spinner" style={{ margin: 'auto' }}></div>
-            ) : (
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDragEnd={onDragEnd}
+            >
                 <div className="kanban-board-container">
-                    {/* Columns */}
-                    {columns.map(col => (
-                        <div
-                            key={col.id}
-                            className="kanban-column"
-                            onDragOver={(e) => {
-                                e.preventDefault(); // MANDATORY for dropping
-                                e.dataTransfer.dropEffect = 'move';
-                                e.currentTarget.classList.add('drag-over');
-                            }}
-                            onDragLeave={(e) => {
-                                e.currentTarget.classList.remove('drag-over');
-                            }}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                e.currentTarget.classList.remove('drag-over');
-                                const cardId = e.dataTransfer.getData('cardId');
-                                if (cardId) handleDrop(cardId, col.id);
-                            }}
-                        >
-                            <div className="column-header">
-                                <h3 className="column-title">
-                                    {col.titulo}
-                                    <span className="column-count">{col.cards?.length || 0}</span>
-                                </h3>
-                                <button className="btn-icon" style={{ opacity: 0.5 }}>•••</button>
+                    <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
+                        {columns.map(col => (
+                            <SortableColumn
+                                key={col.id}
+                                column={col}
+                                cards={col.cards || []}
+                                onEditColumn={openColumnModal}
+                                onDeleteColumn={handleDeleteColumn}
+                                onAddCard={openCardModal}
+                                onCardClick={(c) => openCardModal(c)}
+                            />
+                        ))}
+                    </SortableContext>
+                    {/* Placeholder for "Add Column" at end of list if desired */}
+                </div>
+
+                <DragOverlay>
+                    {activeDragId ? (
+                        activeDragData?.type === 'Column' ? (
+                            <div className="kanban-column drag-overlay">
+                                <div className="column-header"><h3>{activeDragData.column.titulo}</h3></div>
                             </div>
-
-                            <div className="column-body">
-                                {col.cards?.map(card => (
-                                    <div
-                                        key={card.id}
-                                        className="trello-card"
-                                        draggable="true"
-                                        onDragStart={(e) => {
-                                            e.dataTransfer.effectAllowed = 'move';
-                                            e.dataTransfer.setData('cardId', card.id);
-                                            // Optional: Set Drag Image if needed, or leave default
-                                            e.currentTarget.style.opacity = '0.4';
-                                        }}
-                                        onDragEnd={(e) => {
-                                            e.currentTarget.style.opacity = '1';
-                                        }}
-                                        onClick={(e) => {
-                                            // Prevent click if it was a drag (simple heuristic or relying on browser)
-                                            // For now standard onClick is fine, but we can stopPropagation if needed
-                                            openModal(card);
-                                        }}
-                                    >
-                                        {/* Color Label for Priority */}
-                                        <div className="card-labels">
-                                            <span className={`card-label ${getPriorityLabel(card.prioridade)}`} title={`Prioridade: ${card.prioridade}`} />
-                                        </div>
-
-                                        <h4 className="card-title">{card.titulo}</h4>
-
-                                        {/* Card Footer Info */}
-                                        <div className="card-footer">
-                                            <div className="card-meta">
-                                                {/* Visual indicator for movement type */}
-                                                <div className="meta-item" title="Tipo">
-                                                    {card.tipo_movimento === 'entrada' ? '📈' : '📉'}
-                                                </div>
-
-                                                {/* Value Badge if exists */}
-                                                {Number(card.valor) > 0 && (
-                                                    <span className={`valor-badge ${card.tipo_movimento}`}>
-                                                        R$ {Number(card.valor).toLocaleString('pt-BR')}
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Assignee Avatar (Placeholder) */}
-                                            <div className="card-avatar" title="Responsável">
-                                                <span>👤</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                        ) : (
+                            <div className="trello-card drag-overlay">
+                                <h4>{activeDragData.card.titulo}</h4>
                             </div>
+                        )
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
+
+            {/* Column Modal */}
+            {columnModalOpen && (
+                <div className="trello-modal-overlay" onClick={(e) => e.target.className === 'trello-modal-overlay' && setColumnModalOpen(false)}>
+                    <div className="trello-modal small">
+                        <h2>{editingColumn ? 'Editar Coluna' : 'Nova Coluna'}</h2>
+                        <input
+                            className="trello-input"
+                            value={columnTitle}
+                            onChange={(e) => setColumnTitle(e.target.value)}
+                            placeholder="Nome da coluna..."
+                            autoFocus
+                        />
+                        <div className="trello-actions">
+                            <button className="btn-trello" onClick={() => setColumnModalOpen(false)}>Cancelar</button>
+                            <button className="btn-trello primary" onClick={handleCreateColumn}>Salvar</button>
                         </div>
-                    ))}
-
-                    {/* Add Column Button (Placeholder for future) */}
-                    <button className="btn-trello" style={{ minWidth: '300px', justifyContent: 'center', opacity: 0.7 }}>
-                        + Adicionar Coluna
-                    </button>
+                    </div>
                 </div>
             )}
 
-            {/* Empty State / Init Setup */}
-            {!loading && columns.length === 0 && (
-                <div className="empty-state-kanban" style={{ margin: 'auto', textAlign: 'center', color: '#94a3b8' }}>
-                    <h2 style={{ fontSize: '2rem' }}>👋 Bem-vindo ao seu Quadro</h2>
-                    <p>Parece que está tudo vazio por aqui.</p>
-                    <button className="btn-trello primary" style={{ margin: '1rem auto' }} onClick={async () => {
-                        await api.post('/kanban/setup'); fetchKanban();
-                    }}>
-                        ⚡ Configurar Colunas Padrão
-                    </button>
-                </div>
-            )}
-
-            {/* Modal de Edição (Estilo Trello) */}
+            {/* Card Modal (Same as before but simplified) */}
             {modalOpen && (
                 <div className="trello-modal-overlay" onClick={(e) => e.target.className === 'trello-modal-overlay' && setModalOpen(false)}>
                     <div className="trello-modal">
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={handleCardSubmit}>
                             <div className="modal-header">
                                 <input
                                     name="titulo"
                                     placeholder="Título do card..."
-                                    value={formData.titulo}
-                                    onChange={e => setFormData({ ...formData, titulo: e.target.value })}
+                                    value={cardFormData.titulo}
+                                    onChange={e => setCardFormData({ ...cardFormData, titulo: e.target.value })}
                                     required
-                                    autoFocus
                                 />
                             </div>
-
                             <div className="form-row">
                                 <div className="form-group">
                                     <label>Prioridade</label>
-                                    <select className="trello-select" value={formData.prioridade} onChange={e => setFormData({ ...formData, prioridade: e.target.value })}>
+                                    <select className="trello-select" value={cardFormData.prioridade} onChange={e => setCardFormData({ ...cardFormData, prioridade: e.target.value })}>
                                         <option value="alta">🔴 Alta</option>
                                         <option value="media">🟡 Média</option>
                                         <option value="baixa">🟢 Baixa</option>
@@ -287,47 +487,26 @@ export default function Demandas() {
                                 </div>
                                 <div className="form-group">
                                     <label>Tipo Movimento</label>
-                                    <select className="trello-select" value={formData.tipo_movimento} onChange={e => setFormData({ ...formData, tipo_movimento: e.target.value })}>
+                                    <select className="trello-select" value={cardFormData.tipo_movimento} onChange={e => setCardFormData({ ...cardFormData, tipo_movimento: e.target.value })}>
                                         <option value="saida">📉 Despesa</option>
                                         <option value="entrada">📈 Receita</option>
                                     </select>
                                 </div>
                             </div>
-
                             <div className="form-group">
                                 <label>Valor Estimado (R$)</label>
-                                <input
-                                    type="number"
-                                    className="trello-input"
-                                    placeholder="0,00"
-                                    value={formData.valor}
-                                    onChange={e => setFormData({ ...formData, valor: e.target.value })}
-                                />
+                                <input type="number" className="trello-input" value={cardFormData.valor} onChange={e => setCardFormData({ ...cardFormData, valor: e.target.value })} />
                             </div>
-
                             <div className="form-group">
                                 <label>Descrição</label>
-                                <textarea
-                                    className="trello-textarea"
-                                    rows="4"
-                                    placeholder="Adicione detalhes..."
-                                    value={formData.descricao}
-                                    onChange={e => setFormData({ ...formData, descricao: e.target.value })}
-                                />
+                                <textarea className="trello-textarea" rows="4" value={cardFormData.descricao} onChange={e => setCardFormData({ ...cardFormData, descricao: e.target.value })} />
                             </div>
-
                             <div className="trello-actions">
                                 {editingCard && (
-                                    <button type="button" className="btn-trello" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171' }} onClick={() => handleDelete(editingCard.id)}>
-                                        🗑 Excluir
-                                    </button>
+                                    <button type="button" className="btn-trello danger" onClick={() => handleDeleteCard(editingCard.id)}>🗑 Excluir</button>
                                 )}
-                                <button type="button" className="btn-trello" onClick={() => setModalOpen(false)}>
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="btn-trello primary">
-                                    {editingCard ? 'Salvar Alterações' : 'Criar Card'}
-                                </button>
+                                <button type="button" className="btn-trello" onClick={() => setModalOpen(false)}>Cancelar</button>
+                                <button type="submit" className="btn-trello primary">Salvar</button>
                             </div>
                         </form>
                     </div>

@@ -8,6 +8,7 @@ export default function Estoque() {
     const [modalOpen, setModalOpen] = useState(false)
     const [editingItem, setEditingItem] = useState(null)
 
+    // Form Data now includes 'imagem' file object and 'imagem_url' for preview
     const [formData, setFormData] = useState({
         nome: '',
         descricao: '',
@@ -16,7 +17,8 @@ export default function Estoque() {
         quantidade_estoque: '',
         localizacao: '',
         tipo_item: 'produto',
-        margem_lucro: 0
+        margem_lucro: 0,
+        imagem: null // Stores File object
     })
 
     useEffect(() => {
@@ -40,13 +42,37 @@ export default function Estoque() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setFormData(prev => ({ ...prev, imagem: e.target.files[0] }))
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
+            const data = new FormData();
+            data.append('nome', formData.nome);
+            data.append('descricao', formData.descricao);
+            data.append('preco_venda', formData.preco_venda);
+            data.append('preco_custo', formData.preco_custo);
+            data.append('quantidade_estoque', formData.quantidade_estoque);
+            data.append('localizacao', formData.localizacao);
+            data.append('tipo_item', formData.tipo_item);
+            data.append('margem_lucro', formData.margem_lucro);
+
+            if (formData.imagem) {
+                data.append('imagem', formData.imagem);
+            }
+
             if (editingItem) {
-                await api.put(`/produtos/${editingItem.id}`, formData)
+                await api.put(`/produtos/${editingItem.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
             } else {
-                await api.post('/produtos', formData)
+                await api.post('/produtos', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
             }
             setModalOpen(false)
             fetchProdutos()
@@ -80,7 +106,8 @@ export default function Estoque() {
                 quantidade_estoque: item.quantidade_estoque || '',
                 localizacao: item.localizacao || '',
                 tipo_item: 'produto',
-                margem_lucro: item.margem_lucro || 0
+                margem_lucro: item.margem_lucro || 0,
+                imagem: null
             })
         } else {
             resetForm()
@@ -98,7 +125,8 @@ export default function Estoque() {
             quantidade_estoque: '',
             localizacao: '',
             tipo_item: 'produto',
-            margem_lucro: 0
+            margem_lucro: 0,
+            imagem: null
         })
     }
 
@@ -160,9 +188,17 @@ export default function Estoque() {
                         produtos.map(item => (
                             <div key={item.id} className="funcionario-card">
                                 <div className="card-header">
-                                    <div className="avatar-placeholder" style={{ background: '#f59e0b' }}>
-                                        📦
-                                    </div>
+                                    {item.imagem_url ? (
+                                        <img
+                                            src={item.imagem_url}
+                                            alt={item.nome}
+                                            style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <div className="avatar-placeholder" style={{ background: '#f59e0b' }}>
+                                            📦
+                                        </div>
+                                    )}
                                     <div className="card-info">
                                         <h3>{item.nome}</h3>
                                         <span className="cargo-badge">Qtd: {item.quantidade_estoque}</span>
@@ -190,6 +226,33 @@ export default function Estoque() {
                     <div className="modal-content">
                         <h2>{editingItem ? 'Editar Produto' : 'Novo Produto'}</h2>
                         <form onSubmit={handleSubmit}>
+                            <div className="form-group" style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                                <label
+                                    htmlFor="product-image"
+                                    style={{
+                                        cursor: 'pointer',
+                                        display: 'inline-block',
+                                        padding: '10px',
+                                        border: '1px dashed rgba(255,255,255,0.3)',
+                                        borderRadius: '8px'
+                                    }}
+                                >
+                                    {formData.imagem ? '📷 Imagem Selecionada' : (editingItem?.imagem_url ? '🔄 Alterar Imagem' : '📷 Adicionar Foto')}
+                                </label>
+                                <input
+                                    id="product-image"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    style={{ display: 'none' }}
+                                />
+                                {editingItem?.imagem_url && !formData.imagem && (
+                                    <div style={{ marginTop: '5px' }}>
+                                        <img src={editingItem.imagem_url} alt="Atual" style={{ width: '60px', height: '60px', borderRadius: '6px', objectFit: 'cover' }} />
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="form-group">
                                 <label>Nome do Produto *</label>
                                 <input

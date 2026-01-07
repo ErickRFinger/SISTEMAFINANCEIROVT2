@@ -134,9 +134,63 @@
     font-weight: 600;
     font-size: 1rem;
     margin: 0;
-    display: flex;
-    align-items: center;
     gap: 0.5rem;
+    color: white;
+    /* Ensure visible on dark header */
+}
+
+/* Actions within Column Header */
+.column-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.kanban-column:hover .column-actions {
+    opacity: 1;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.btn-icon.danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--priority-high);
+}
+
+.column-footer {
+    padding: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-add-card {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    text-align: left;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
 }
 
 .column-count {
@@ -368,4 +422,27 @@
     to {
         opacity: 1;
     }
+}
+
+/* Drag Overlay Styles */
+.drag-overlay {
+    z-index: 9999;
+    cursor: grabbing;
+    opacity: 0.9;
+    transform: rotate(3deg);
+    /* Fun tilt effect */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}
+
+.trello-modal.small {
+    max-width: 400px;
+}
+
+.btn-trello.danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--priority-high);
+}
+
+.btn-trello.danger:hover {
+    background: rgba(239, 68, 68, 0.3);
 }
